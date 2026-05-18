@@ -1,0 +1,326 @@
+@import "tailwindcss";
+
+/* ============================================================
+   FONTS — Self-hosted via next/font/local in app/layout.tsx
+   Variables: --font-display (Doto), --font-body (Space Grotesk), --font-mono (Space Mono)
+   ============================================================ */
+
+@theme {
+  --color-black: #000000;
+  --color-surface: #111111;
+  --color-surface-raised: #1a1a1a;
+  --color-border: #222222;
+  --color-border-visible: #333333;
+  --color-text-disabled: #666666;
+  --color-text-secondary: #999999;
+  --color-text-primary: #e8e8e8;
+  --color-text-display: #ffffff;
+  --color-interactive: #5b9bf6;
+  --color-accent: #d71921;
+  --color-success: #4a9e5c;
+  --color-warning: #d4a843;
+
+  --font-display: var(--font-doto), "Space Mono", monospace;
+  --font-body: var(--font-space-grotesk), "DM Sans", system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), "JetBrains Mono", "SF Mono", monospace;
+}
+
+/* ============================================================
+   Semantic theme tokens. Default = dark; [data-theme="light"] flips them.
+   ============================================================ */
+:root {
+  --black: #000000;
+  --surface: #111111;
+  --surface-raised: #1a1a1a;
+  --border: #222222;
+  --border-visible: #333333;
+  --text-disabled: #666666;
+  --text-secondary: #999999;
+  --text-primary: #e8e8e8;
+  --text-display: #ffffff;
+  --interactive: #5b9bf6;
+  --accent: #d71921;
+  --accent-subtle: rgba(215, 25, 33, 0.15);
+  --success: #4a9e5c;
+  --warning: #d4a843;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --black: #f5f5f5;
+  --surface: #ffffff;
+  --surface-raised: #f0f0f0;
+  --border: #e8e8e8;
+  --border-visible: #cccccc;
+  --text-disabled: #999999;
+  --text-secondary: #666666;
+  --text-primary: #1a1a1a;
+  --text-display: #000000;
+  --interactive: #007aff;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background: var(--black);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   UTILITIES — dot grids, mono labels, etc.
+   ============================================================ */
+
+.dot-grid {
+  background-image: radial-gradient(
+    circle,
+    var(--border-visible) 1px,
+    transparent 1px
+  );
+  background-size: 16px 16px;
+}
+
+.dot-grid-subtle {
+  background-image: radial-gradient(
+    circle,
+    var(--border) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 12px 12px;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Safe area helpers for iOS */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-visible);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Inputs default reset */
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ============================================================
+   BUTTON SYSTEM — all button styles live here as plain CSS so
+   that light/dark variants can't drift from the variable cascade.
+   The React Button component just applies these class names.
+   ============================================================ */
+
+.btn {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid transparent;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    filter 150ms ease;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Sizes */
+.btn--sm {
+  padding: 0.5rem 1rem;
+  font-size: 11px;
+}
+.btn--md {
+  padding: 0.75rem 1.25rem;
+  font-size: 12px;
+}
+.btn--lg {
+  padding: 1rem 1.75rem;
+  font-size: 12px;
+}
+
+/* PRIMARY — high-contrast, theme-aware. Colors are written explicitly here
+   so no CSS-variable inversion games can break it.
+   Default (no data-theme, or data-theme="dark") → white bg, black text.
+   data-theme="light" → black bg, white text. */
+.btn--primary {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+.btn--primary:hover:not(:disabled) {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.btn--primary:disabled {
+  background-color: var(--surface-raised);
+  border-color: var(--border-visible);
+  color: var(--text-disabled);
+}
+[data-theme="light"] .btn--primary {
+  background-color: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+[data-theme="light"] .btn--primary:hover:not(:disabled) {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+/* ACCENT — signal red, white text in both themes. */
+.btn--accent,
+.btn--danger {
+  background-color: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+.btn--accent:hover:not(:disabled),
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.btn--accent:disabled,
+.btn--danger:disabled {
+  background-color: var(--surface-raised);
+  border-color: var(--border-visible);
+  color: var(--text-disabled);
+}
+
+/* OUTLINE — transparent bg, theme-aware text color. */
+.btn--outline {
+  background-color: transparent;
+  color: var(--text-display);
+  border-color: var(--border-visible);
+}
+.btn--outline:hover:not(:disabled) {
+  background-color: var(--surface-raised);
+  border-color: var(--text-display);
+  color: var(--text-display);
+}
+.btn--outline:disabled {
+  color: var(--text-disabled);
+  border-color: var(--border);
+}
+
+/* GHOST — text-only button. */
+.btn--ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.btn--ghost:hover:not(:disabled) {
+  color: var(--text-display);
+  background-color: var(--surface-raised);
+}
+.btn--ghost:disabled {
+  color: var(--text-disabled);
+}
+
+/* ============================================================
+   CHIP — small selectable pill (e.g. equipment picker).
+   ============================================================ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-visible);
+  background-color: transparent;
+  color: var(--text-secondary);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  cursor: pointer;
+  user-select: none;
+}
+.chip:hover {
+  color: var(--text-display);
+  border-color: var(--text-display);
+}
+.chip--active {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+.chip--active:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+[data-theme="light"] .chip--active,
+[data-theme="light"] .chip--active:hover {
+  background-color: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}

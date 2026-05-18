@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lifetracker
+      POSTGRES_USER: lifetracker
+      POSTGRES_PASSWORD: lifetracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - lt_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lifetracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://lifetracker:lifetracker@db:5432/lifetracker
+      SESSION_SECRET: ${SESSION_SECRET:-dev_secret_change_me_dev_secret_change_me_dev_secret_change_me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      FAL_KEY: ${FAL_KEY:-}
+      WHOOP_CLIENT_ID: ${WHOOP_CLIENT_ID:-}
+      WHOOP_CLIENT_SECRET: ${WHOOP_CLIENT_SECRET:-}
+      WHOOP_REDIRECT_URI: ${WHOOP_REDIRECT_URI:-http://localhost:3000/api/whoop/callback}
+      WHOOP_WEBHOOK_SECRET: ${WHOOP_WEBHOOK_SECRET:-}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      ENABLE_CRON: ${ENABLE_CRON:-0}
+      TZ: Europe/Istanbul
+    ports:
+      - "3000:3000"
+    volumes:
+      - lt_uploads:/data/uploads
+
+volumes:
+  lt_pg:
+  lt_uploads:

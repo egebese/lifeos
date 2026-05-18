@@ -1,0 +1,11 @@
+{
+  "name": "Lifetracker",
+  "short_name": "Lifetracker",
+  "description": "Self-hosted personal life tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": []
+}

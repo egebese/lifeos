@@ -1,0 +1,43 @@
+name: CI
+
+# This workflow only runs lint/typecheck/build. It does not handle any
+# untrusted input from issues, PRs, or commits (no github.event.*.title /
+# .body / commit messages used in run: blocks), so it is not vulnerable to
+# workflow injection.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+        env:
+          DATABASE_URL: postgres://placeholder:placeholder@localhost:5432/placeholder
+          SESSION_SECRET: ci_placeholder_secret_thats_at_least_64_bytes_long_for_iron_session_xx
+          FAL_KEY: placeholder
+          NEXT_TELEMETRY_DISABLED: "1"

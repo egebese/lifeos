@@ -1,0 +1,58 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatKg(v: number | string | null | undefined, digits = 1): string {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = typeof v === "string" ? Number(v) : v;
+  if (Number.isNaN(n)) return "—";
+  return n.toFixed(digits);
+}
+
+export function formatInt(v: number | string | null | undefined): string {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = typeof v === "string" ? Number(v) : v;
+  if (Number.isNaN(n)) return "—";
+  return Math.round(n).toString();
+}
+
+export function dayKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export function diffDays(a: Date, b: Date): number {
+  return Math.round((+a - +b) / 86_400_000);
+}
+
+// Derive a friendly display name. Prefer the explicit `displayName`, else
+// take the local-part of the email and title-case it ("ege.bese" → "Ege Bese").
+export function resolveDisplayName(args: {
+  displayName?: string | null;
+  email: string;
+}): string {
+  const explicit = args.displayName?.trim();
+  if (explicit) return explicit;
+  const local = args.email.split("@")[0] ?? args.email;
+  return local
+    .split(/[._\-+]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+export function greetingFor(
+  _locale: "tr" | "en",
+  name: string,
+  date = new Date(),
+): string {
+  // UI copy is English-only — see app/layout.tsx (lang="en"). The locale arg
+  // is kept for API stability so callers don't need to change.
+  const hour = date.getHours();
+  if (hour < 6) return `Good night, ${name}`;
+  if (hour < 12) return `Good morning, ${name}`;
+  if (hour < 18) return `Hello, ${name}`;
+  return `Good evening, ${name}`;
+}

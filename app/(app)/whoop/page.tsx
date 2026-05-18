@@ -1,0 +1,169 @@
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { whoopRecovery, whoopSleep, whoopStrain, whoopTokens, whoopWorkouts } from "@/lib/db/schema";
+import { requireSession } from "@/lib/auth/session";
+import { Card, CardLabel } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { MonoStat } from "@/components/nothing/mono-stat";
+import { Gauge } from "@/components/nothing/gauge";
+import Link from "next/link";
+import { SyncWhoopButton } from "./sync-button";
+import { WhoopHistory } from "@/components/whoop/whoop-history";
+
+export const dynamic = "force-dynamic";
+
+export default async function WhoopPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ connected?: string }>;
+}) {
+  const { user } = await requireSession();
+  const sp = await searchParams;
+  const [tok] = await db
+    .select({ userId: whoopTokens.userId })
+    .from(whoopTokens)
+    .where(eq(whoopTokens.userId, user.id))
+    .limit(1);
+
+  const connected = Boolean(tok);
+
+  const [rec] = connected
+    ? await db
+        .select()
+        .from(whoopRecovery)
+        .where(eq(whoopRecovery.userId, user.id))
+        .orderBy(desc(whoopRecovery.date))
+        .limit(1)
+    : [];
+
+  const [sleep] = connected
+    ? await db
+        .select()
+        .from(whoopSleep)
+        .where(eq(whoopSleep.userId, user.id))
+        .orderBy(desc(whoopSleep.start))
+        .limit(1)
+    : [];
+
+  const [strain] = connected
+    ? await db
+        .select()
+        .from(whoopStrain)
+        .where(eq(whoopStrain.userId, user.id))
+        .orderBy(desc(whoopStrain.date))
+        .limit(1)
+    : [];
+
+  const recentWorkouts = connected
+    ? await db
+        .select()
+        .from(whoopWorkouts)
+        .where(eq(whoopWorkouts.userId, user.id))
+        .orderBy(desc(whoopWorkouts.start))
+        .limit(10)
+    : [];
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-4">
+        <div>
+          <div className="mono-label">DEVICE · WHOOP</div>
+          <h1 className="font-display text-4xl mt-1">whoop</h1>
+        </div>
+        {connected ? <SyncWhoopButton /> : null}
+      </header>
+
+      {sp.connected === "1" && (
+        <div className="font-mono text-[11px] text-[color:var(--success)] uppercase tracking-[0.1em]">
+          → CONNECTED. RUN SYNC TO PULL DATA.
+        </div>
+      )}
+
+      {!connected ? (
+        <Card>
+          <CardLabel>NOT CONNECTED</CardLabel>
+          <p className="font-body text-sm text-[color:var(--text-secondary)] mt-2">
+            Connect your Whoop account to sync recovery, sleep, strain, and workouts.
+          </p>
+          <div className="mt-4">
+            <Link href="/api/whoop/connect">
+              <Button>CONNECT WHOOP →</Button>
+            </Link>
+          </div>
+        </Card>
+      ) : (
+        <>
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="flex flex-col items-center">
+              <CardLabel>RECOVERY</CardLabel>
+              <Gauge
+                value={rec?.score ?? 0}
+                max={100}
+                size={160}
+                unit="%"
+                label="TODAY"
+                accentByValue
+              />
+            </Card>
+            <Card>
+              <CardLabel>SLEEP</CardLabel>
+              <MonoStat
+                label="HOURS"
+                value={
+                  sleep
+                    ? (
+                        (new Date(sleep.end).getTime() - new Date(sleep.start).getTime()) /
+                        3_600_000
+                      ).toFixed(1)
+                    : "—"
+                }
+                unit="h"
+              />
+              <div className="mt-3">
+                <MonoStat
+                  label="PERFORMANCE"
+                  value={sleep?.performancePct ? Number(sleep.performancePct).toFixed(0) : "—"}
+                  unit="%"
+                />
+              </div>
+            </Card>
+            <Card>
+              <CardLabel>STRAIN</CardLabel>
+              <MonoStat
+                label="SCORE"
+                value={strain?.score ? Number(strain.score).toFixed(1) : "—"}
+              />
+              <div className="mt-3">
+                <MonoStat label="AVG HR" value={strain?.avgHr ?? "—"} unit="bpm" />
+              </div>
+            </Card>
+          </section>
+
+          <WhoopHistory userId={user.id} days={30} />
+
+          {recentWorkouts.length > 0 && (
+            <Card>
+              <CardLabel>RECENT WORKOUTS (WHOOP)</CardLabel>
+              <ul className="mt-2 space-y-0">
+                {recentWorkouts.map((w) => (
+                  <li
+                    key={w.id}
+                    className="grid grid-cols-[1fr_auto_auto] gap-3 py-2 border-b border-[color:var(--border)]"
+                  >
+                    <span className="font-body text-sm">{w.sport ?? "workout"}</span>
+                    <span className="font-mono text-[11px] text-[color:var(--text-secondary)]">
+                      {new Date(w.start).toLocaleDateString("en-US")}
+                    </span>
+                    <span className="font-mono text-[11px] text-[color:var(--text-display)]">
+                      {w.strain ? `strain ${Number(w.strain).toFixed(1)}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

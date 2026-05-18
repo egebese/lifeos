@@ -1,0 +1,160 @@
+import Link from "next/link";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import {
+  exercises,
+  programExercises,
+  workouts,
+  workoutSets,
+} from "@/lib/db/schema";
+import { requireSession } from "@/lib/auth/session";
+import { notFound } from "next/navigation";
+import { WorkoutSession, type WorkoutExercise } from "./workout-session";
+import { WhoopStrainCard } from "@/components/workout/whoop-strain-card";
+
+export const dynamic = "force-dynamic";
+
+export default async function WorkoutDetail({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { user } = await requireSession();
+  const { id } = await params;
+
+  const [w] = await db.select().from(workouts).where(eq(workouts.id, id)).limit(1);
+  if (!w || w.userId !== user.id) return notFound();
+
+  // Planned exercises (from program day)
+  let planned: WorkoutExercise[] = [];
+  if (w.programDayId) {
+    const rows = await db
+      .select({
+        exerciseId: programExercises.exerciseId,
+        orderIndex: programExercises.orderIndex,
+        targetSets: programExercises.targetSets,
+        targetReps: programExercises.targetReps,
+        targetWeightKg: programExercises.targetWeightKg,
+        nameEn: exercises.nameEn,
+        nameTr: exercises.nameTr,
+        bodyPart: exercises.bodyPart,
+        equipment: exercises.equipment,
+        target: exercises.target,
+        muscleGroup: exercises.muscleGroup,
+        secondaryMuscles: exercises.secondaryMuscles,
+        instructionsEn: exercises.instructionsEn,
+        instructionsTr: exercises.instructionsTr,
+        imageUrl: exercises.imageUrl,
+        gifUrl: exercises.gifUrl,
+      })
+      .from(programExercises)
+      .innerJoin(exercises, eq(exercises.id, programExercises.exerciseId))
+      .where(eq(programExercises.programDayId, w.programDayId));
+    planned = rows
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((r) => ({
+        exerciseId: r.exerciseId,
+        nameEn: r.nameEn,
+        nameTr: r.nameTr,
+        bodyPart: r.bodyPart,
+        equipment: r.equipment,
+        target: r.target,
+        muscleGroup: r.muscleGroup,
+        secondaryMuscles: r.secondaryMuscles ?? null,
+        instructionsEn: r.instructionsEn,
+        instructionsTr: r.instructionsTr,
+        imageUrl: r.imageUrl,
+        gifUrl: r.gifUrl,
+        targetSets: r.targetSets,
+        targetReps: r.targetReps,
+        targetWeightKg: r.targetWeightKg ? Number(r.targetWeightKg) : null,
+      }));
+  }
+
+  // Sets already logged
+  const sets = await db.select().from(workoutSets).where(eq(workoutSets.workoutId, w.id));
+
+  // For sets logged against exercises that aren't in `planned` (i.e. ad-hoc adds),
+  // we still need their meta to display. Fetch any extras.
+  const seenIds = new Set(planned.map((p) => p.exerciseId));
+  const adhocIds = Array.from(new Set(sets.map((s) => s.exerciseId))).filter(
+    (id) => !seenIds.has(id),
+  );
+  let adhoc: WorkoutExercise[] = [];
+  if (adhocIds.length > 0) {
+    const rows = await db
+      .select()
+      .from(exercises)
+      .where(eq(exercises.id, adhocIds[0]));
+    // Multi-id select: loop because drizzle's `inArray` may not be imported here; keep it simple.
+    const all: typeof rows = [];
+    for (const id of adhocIds) {
+      const r = await db.select().from(exercises).where(eq(exercises.id, id)).limit(1);
+      if (r[0]) all.push(r[0]);
+    }
+    adhoc = all.map((r) => ({
+      exerciseId: r.id,
+      nameEn: r.nameEn,
+      nameTr: r.nameTr,
+      bodyPart: r.bodyPart,
+      equipment: r.equipment,
+      target: r.target,
+      muscleGroup: r.muscleGroup,
+      secondaryMuscles: (r.secondaryMuscles as string[] | null) ?? null,
+      instructionsEn: r.instructionsEn,
+      instructionsTr: r.instructionsTr,
+      imageUrl: r.imageUrl,
+      gifUrl: r.gifUrl,
+      targetSets: null,
+      targetReps: null,
+      targetWeightKg: null,
+    }));
+  }
+
+  const initialExercises = [...planned, ...adhoc];
+
+  return (
+    <div className="space-y-6">
+      <header className="flex items-baseline justify-between gap-3">
+        <div>
+          <Link
+            href="/workouts"
+            className="mono-label hover:text-[color:var(--text-display)]"
+          >
+            ← BACK
+          </Link>
+          <h1 className="font-display text-3xl md:text-4xl mt-2">
+            {new Date(w.startedAt).toLocaleString("en-US", {
+              weekday: "short",
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </h1>
+        </div>
+        <div className="text-right">
+          <div className="mono-label">
+            {w.endedAt ? "COMPLETED" : "IN PROGRESS"}
+          </div>
+        </div>
+      </header>
+
+      <WorkoutSession
+        workoutId={w.id}
+        locale="en"
+        initialExercises={initialExercises}
+        existingSets={sets.map((s) => ({
+          exerciseId: s.exerciseId,
+          setIndex: s.setIndex,
+          reps: s.reps,
+          weightKg: s.weightKg ? Number(s.weightKg) : null,
+          rpe: s.rpe,
+        }))}
+        ended={Boolean(w.endedAt)}
+      />
+
+      <WhoopStrainCard workoutId={w.id} />
+    </div>
+  );
+}

@@ -1,0 +1,25 @@
+node_modules/
+.next/
+.turbo/
+out/
+dist/
+*.tsbuildinfo
+
+.env
+.env.local
+.env.production
+.env.*.local
+
+*.log
+.DS_Store
+
+uploads/
+/data/
+.pnpm-store/
+
+# Exercise media (synced from hasaneyldrm/exercises-dataset via pnpm sync:exercises)
+/public/exercises/
+
+# IDE
+.vscode/
+.idea/
