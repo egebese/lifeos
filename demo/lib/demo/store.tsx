@@ -12,7 +12,7 @@ import {
 } from "react";
 import { buildSeed, generateId, type DemoState, DEMO_USER_ID } from "./seed";
 
-const STORAGE_KEY = "lifeos-demo-state-v1";
+const STORAGE_KEY = "lifeos-demo-state-v2";
 
 type Updater =
   | Partial<DemoState>
@@ -86,33 +86,46 @@ function saveToStorage(state: DemoState) {
 }
 
 export function DemoStoreProvider({ children }: { children: ReactNode }) {
-  // Always start from seed so SSR and the first client render match.
-  // After mount, hydrate from localStorage.
-  const [state, setState] = useState<DemoState>(() => buildSeed());
-  const [ready, setReady] = useState(false);
+  // We render nothing during SSR / first client render. After mount we build
+  // the seed (using current time), then overlay any persisted state from
+  // localStorage. This avoids two problems:
+  //   1. SSR/CSR mismatch: `new Date()` in the seed differs between the build
+  //      machine and the visitor's browser.
+  //   2. Stale localStorage from earlier deploys with a different shape.
+  const [state, setState] = useState<DemoState | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
+    const seed = buildSeed();
     const stored = loadFromStorage();
-    if (stored) {
-      // Trust the stored state if it has the required keys.
-      if (stored.profile && Array.isArray(stored.workouts)) {
-        setState(stored);
-      }
+    // Adopt stored state only if its shape matches the current schema —
+    // require all top-level keys we expect. Otherwise fall back to seed.
+    if (
+      stored &&
+      stored.profile &&
+      Array.isArray(stored.workouts) &&
+      Array.isArray(stored.foodEntries) &&
+      Array.isArray(stored.workoutSets) &&
+      Array.isArray(stored.exercises) &&
+      Array.isArray(stored.whoopRecovery)
+    ) {
+      setState(stored);
+    } else {
+      setState(seed);
     }
-    setReady(true);
   }, []);
 
-  // Persist on every change (but only after we've hydrated, to avoid clobbering).
+  // Persist on every change once we have state.
   useEffect(() => {
-    if (!ready) return;
+    if (!state) return;
     saveToStorage(state);
-  }, [state, ready]);
+  }, [state]);
 
   const update = useCallback<DemoStore["update"]>((u) => {
     setState((prev) => {
+      if (!prev) return prev;
       const patch = typeof u === "function" ? u(prev) : u;
       return { ...prev, ...patch };
     });
@@ -126,10 +139,24 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const ready = state !== null;
   const value = useMemo<DemoStore>(
-    () => ({ state, update, reset, ready }),
+    () => ({ state: state ?? ({} as DemoState), update, reset, ready }),
     [state, update, reset, ready],
   );
+
+  // Until the store is hydrated client-side, render a minimal placeholder
+  // (matches the empty SSR output so React hydration never sees a mismatch).
+  if (!ready) {
+    return (
+      <DemoStoreContext.Provider value={value}>
+        <div
+          aria-hidden
+          style={{ minHeight: "100vh", background: "var(--black)" }}
+        />
+      </DemoStoreContext.Provider>
+    );
+  }
 
   return (
     <DemoStoreContext.Provider value={value}>
