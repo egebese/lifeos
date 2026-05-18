@@ -1,0 +1,136 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { Search, X } from "lucide-react";
+import { useDemoStore } from "@/lib/demo/store";
+
+type PickerExercise = {
+  id: string;
+  nameEn: string;
+  nameTr: string | null;
+  bodyPart: string | null;
+  equipment: string | null;
+  target: string | null;
+  gifUrl: string | null;
+};
+
+export function ExercisePicker({
+  open,
+  onClose,
+  onPick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onPick: (exerciseId: string, name: string) => void | Promise<void>;
+}) {
+  const { state } = useDemoStore();
+  const [q, setQ] = useState("");
+
+  const rows = useMemo<PickerExercise[]>(() => {
+    const lo = q.trim().toLowerCase();
+    return state.exercises
+      .filter((e) => (lo ? e.nameEn.toLowerCase().includes(lo) : true))
+      .slice(0, 30)
+      .map((e) => ({
+        id: e.id,
+        nameEn: e.nameEn,
+        nameTr: e.nameTr,
+        bodyPart: e.bodyPart,
+        equipment: e.equipment,
+        target: e.target,
+        gifUrl: e.gifUrl,
+      }));
+  }, [state.exercises, q]);
+
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+      <button
+        aria-label="close"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/70 dot-grid-subtle"
+      />
+      <div className="relative w-full md:max-w-2xl max-h-[90dvh] overflow-hidden flex flex-col bg-[color:var(--surface)] border-t md:border border-[color:var(--border-visible)] safe-bottom">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3 border-b border-[color:var(--border)]">
+          <div className="mono-label">ADD EXERCISE</div>
+          <button
+            onClick={onClose}
+            aria-label="close"
+            className="text-[color:var(--text-secondary)] hover:text-[color:var(--text-display)] min-h-[44px] min-w-[44px] -mr-3 flex items-center justify-center"
+          >
+            <X size={20} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <div className="px-5 py-3 border-b border-[color:var(--border)]">
+          <div className="flex items-center gap-2 border-b border-[color:var(--border-visible)] focus-within:border-[color:var(--accent)]">
+            <Search size={16} strokeWidth={1.5} className="text-[color:var(--text-secondary)]" />
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="bench press, squat, row…"
+              className="flex-1 bg-transparent py-3 font-body text-base text-[color:var(--text-display)] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {rows.length === 0 ? (
+            <div className="font-mono text-[11px] text-[color:var(--text-disabled)] p-4">
+              no match
+            </div>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {rows.map((ex) => (
+                <li key={ex.id}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(ex.id, ex.nameEn)}
+                    className="w-full grid grid-cols-[64px_1fr] gap-3 text-left p-2 border border-[color:var(--border)] hover:border-[color:var(--text-display)] transition"
+                  >
+                    {ex.gifUrl ? (
+                      <Image
+                        src={ex.gifUrl}
+                        alt={ex.nameEn}
+                        width={128}
+                        height={128}
+                        unoptimized
+                        className="w-16 h-16 object-cover border border-[color:var(--border)]"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 dot-grid-subtle border border-[color:var(--border)]" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-body text-sm text-[color:var(--text-display)] truncate">
+                        {ex.nameEn}
+                      </div>
+                      <div className="mono-label mt-1 truncate">
+                        {[ex.target, ex.equipment].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

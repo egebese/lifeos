@@ -1,0 +1,41 @@
+{
+  "name": "lifetracker-demo",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Static demo of LifeOS — localStorage-backed, no DB, no auth, no AI calls.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "browser-image-compression": "^2.0.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "next": "^15.5.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "recharts": "^2.15.0",
+    "tailwind-merge": "^2.6.0",
+    "vaul": "^1.1.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "19.0.4",
+    "@types/react-dom": "19.0.2",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^15.5.0",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.2",
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp"]
+  }
+}

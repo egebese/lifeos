@@ -3,6 +3,7 @@ node_modules/
 .turbo/
 out/
 dist/
+.vercel/
 *.tsbuildinfo
 
 .env
@@ -19,6 +20,7 @@ uploads/
 
 # Exercise media (synced from hasaneyldrm/exercises-dataset via pnpm sync:exercises)
 /public/exercises/
+/demo/public/exercises/
 
 # IDE
 .vscode/

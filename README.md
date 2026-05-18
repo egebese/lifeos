@@ -6,6 +6,8 @@
 
 One [fal.ai](https://fal.ai) key powers every AI feature in the app.
 
+[**▸ Live demo**](https://lifeos-demo-nu.vercel.app)  ·  data stays in your browser, nothing is sent server-side
+
 [![License: MIT](https://img.shields.io/badge/license-MIT-black.svg)](LICENSE)
 ![Node 20+](https://img.shields.io/badge/node-%E2%89%A520-black)
 ![Next.js 15](https://img.shields.io/badge/next.js-15-black)
