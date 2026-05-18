@@ -14,7 +14,28 @@ One [fal.ai](https://fal.ai) key powers every AI feature in the app.
 ![PostgreSQL 16](https://img.shields.io/badge/postgres-16-black)
 ![fal.ai](https://img.shields.io/badge/AI-fal.ai-black)
 
+![Dashboard](docs/screenshots/dashboard.png)
+
 </div>
+
+## Screens
+
+| | |
+|---|---|
+| ![Workouts](docs/screenshots/workouts.png) | ![Food log](docs/screenshots/food.png) |
+| Workouts — log sets, rest timer, programs, 1RM tracking | Food log — manual or AI photo, daily macros vs target |
+| ![Whoop](docs/screenshots/whoop.png) | ![Programs](docs/screenshots/programs.png) |
+| Whoop — 30-day recovery / sleep / strain history | Programs — saved splits or AI-generated |
+
+<details>
+<summary>Mobile (the app is mobile-first)</summary>
+
+| Dashboard | Food log |
+|---|---|
+| <img src="docs/screenshots/mobile-dashboard.png" width="320" /> | <img src="docs/screenshots/mobile-food.png" width="320" /> |
+
+</details>
+
 
 ---
 
