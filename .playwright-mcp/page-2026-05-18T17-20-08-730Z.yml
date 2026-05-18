@@ -1,0 +1,305 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "LifeOS — home" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - text: LifeOS
+        - navigation [ref=e7]:
+          - list [ref=e8]:
+            - listitem [ref=e9]:
+              - link "Dashboard" [ref=e10] [cursor=pointer]:
+                - /url: /
+                - text: Dashboard
+            - listitem [ref=e12]:
+              - link "Workouts" [ref=e13] [cursor=pointer]:
+                - /url: /workouts
+                - text: Workouts
+            - listitem [ref=e15]:
+              - link "Programs" [ref=e16] [cursor=pointer]:
+                - /url: /programs
+                - text: Programs
+            - listitem [ref=e18]:
+              - link "Food" [ref=e19] [cursor=pointer]:
+                - /url: /food
+                - text: Food
+            - listitem [ref=e21]:
+              - link "Meal Plan" [ref=e22] [cursor=pointer]:
+                - /url: /food/plan
+                - text: Meal Plan
+            - listitem [ref=e24]:
+              - link "Pantry" [ref=e25] [cursor=pointer]:
+                - /url: /pantry
+                - text: Pantry
+            - listitem [ref=e27]:
+              - link "Whoop" [ref=e28] [cursor=pointer]:
+                - /url: /whoop
+                - text: Whoop
+            - listitem [ref=e30]:
+              - link "Analysis" [ref=e31] [cursor=pointer]:
+                - /url: /analysis
+                - text: Analysis
+            - listitem [ref=e33]:
+              - link "Profile" [ref=e34] [cursor=pointer]:
+                - /url: /profile
+                - text: Profile
+        - generic [ref=e36]:
+          - button "Switch to dark theme" [ref=e37] [cursor=pointer]:
+            - img [ref=e38]
+          - button "Reset demo data" [ref=e40] [cursor=pointer]:
+            - img [ref=e41]
+    - main [ref=e46]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: DEVICE · WHOOP
+            - heading "whoop" [level=1] [ref=e52]
+          - generic [ref=e54]:
+            - button "SYNC 30D" [ref=e55] [cursor=pointer]
+            - button "PULL 180D" [ref=e56] [cursor=pointer]
+            - button "PULL 1Y" [ref=e57] [cursor=pointer]
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]: RECOVERY
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - generic [ref=e65]:
+                - generic [ref=e66]: "56"
+                - generic [ref=e67]: "%"
+                - generic [ref=e68]: TODAY
+          - generic [ref=e69]:
+            - generic [ref=e70]: SLEEP
+            - generic [ref=e71]:
+              - generic [ref=e72]: HOURS
+              - generic [ref=e73]:
+                - generic [ref=e74]: "7.0"
+                - generic [ref=e75]: h
+            - generic [ref=e77]:
+              - generic [ref=e78]: PERFORMANCE
+              - generic [ref=e79]:
+                - generic [ref=e80]: "88"
+                - generic [ref=e81]: "%"
+          - generic [ref=e82]:
+            - generic [ref=e83]: STRAIN
+            - generic [ref=e84]:
+              - generic [ref=e85]: SCORE
+              - generic [ref=e87]: "9.9"
+            - generic [ref=e89]:
+              - generic [ref=e90]: AVG HR
+              - generic [ref=e91]:
+                - generic [ref=e92]: "82"
+                - generic [ref=e93]: bpm
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]: HISTORY · 30D
+            - generic [ref=e97]: 2026-04-19 → 2026-05-18
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: AVG RECOVERY
+              - generic [ref=e101]:
+                - generic [ref=e102]: "67"
+                - generic [ref=e103]: "%"
+            - generic [ref=e104]:
+              - generic [ref=e105]: AVG SLEEP
+              - generic [ref=e106]:
+                - generic [ref=e107]: "7.4"
+                - generic [ref=e108]: h
+            - generic [ref=e109]:
+              - generic [ref=e110]: AVG STRAIN
+              - generic [ref=e112]: "13.0"
+            - generic [ref=e113]:
+              - generic [ref=e114]: WORKOUTS
+              - generic [ref=e116]: "12"
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - generic [ref=e119]: RECOVERY · DAILY
+              - generic [ref=e120]:
+                - generic "daily values" [ref=e121]:
+                  - generic "2026-04-19 — 56.0%" [ref=e122]
+                  - generic "2026-04-20 — 71.0%" [ref=e123]
+                  - generic "2026-04-21 — 88.0%" [ref=e124]
+                  - generic "2026-04-22 — 88.0%" [ref=e125]
+                  - generic "2026-04-23 — 82.0%" [ref=e126]
+                  - generic "2026-04-24 — 48.0%" [ref=e127]
+                  - generic "2026-04-25 — 64.0%" [ref=e128]
+                  - generic "2026-04-26 — 81.0%" [ref=e129]
+                  - generic "2026-04-27 — 84.0%" [ref=e130]
+                  - generic "2026-04-28 — 79.0%" [ref=e131]
+                  - generic "2026-04-29 — 70.0%" [ref=e132]
+                  - generic "2026-04-30 — 50.0%" [ref=e133]
+                  - generic "2026-05-01 — 57.0%" [ref=e134]
+                  - generic "2026-05-02 — 89.0%" [ref=e135]
+                  - generic "2026-05-03 — 51.0%" [ref=e136]
+                  - generic "2026-05-04 — 57.0%" [ref=e137]
+                  - generic "2026-05-05 — 58.0%" [ref=e138]
+                  - generic "2026-05-06 — 67.0%" [ref=e139]
+                  - generic "2026-05-07 — 71.0%" [ref=e140]
+                  - generic "2026-05-08 — 64.0%" [ref=e141]
+                  - generic "2026-05-09 — 74.0%" [ref=e142]
+                  - generic "2026-05-10 — 66.0%" [ref=e143]
+                  - generic "2026-05-11 — 43.0%" [ref=e144]
+                  - generic "2026-05-12 — 58.0%" [ref=e145]
+                  - generic "2026-05-13 — 87.0%" [ref=e146]
+                  - generic "2026-05-14 — 60.0%" [ref=e147]
+                  - generic "2026-05-15 — 64.0%" [ref=e148]
+                  - generic "2026-05-16 — 51.0%" [ref=e149]
+                  - generic "2026-05-17 — 56.0%" [ref=e150]
+                  - generic "2026-05-18" [ref=e151]
+                - generic [ref=e152]:
+                  - generic [ref=e153]: 04-19
+                  - generic [ref=e154]: 05-18
+            - generic [ref=e155]:
+              - generic [ref=e156]: SLEEP · DAILY HOURS
+              - generic [ref=e157]:
+                - generic "daily values" [ref=e158]:
+                  - generic "2026-04-19 — 8.4h" [ref=e159]
+                  - generic "2026-04-20 — 7.9h" [ref=e160]
+                  - generic "2026-04-21 — 6.9h" [ref=e161]
+                  - generic "2026-04-22 — 6.6h" [ref=e162]
+                  - generic "2026-04-23 — 6.8h" [ref=e163]
+                  - generic "2026-04-24 — 7.9h" [ref=e164]
+                  - generic "2026-04-25 — 8.2h" [ref=e165]
+                  - generic "2026-04-26 — 7.3h" [ref=e166]
+                  - generic "2026-04-27 — 6.9h" [ref=e167]
+                  - generic "2026-04-28 — 7.4h" [ref=e168]
+                  - generic "2026-04-29 — 7.0h" [ref=e169]
+                  - generic "2026-04-30 — 8.2h" [ref=e170]
+                  - generic "2026-05-01 — 7.2h" [ref=e171]
+                  - generic "2026-05-02 — 7.6h" [ref=e172]
+                  - generic "2026-05-03 — 6.5h" [ref=e173]
+                  - generic "2026-05-04 — 8.2h" [ref=e174]
+                  - generic "2026-05-05 — 6.6h" [ref=e175]
+                  - generic "2026-05-06 — 7.9h" [ref=e176]
+                  - generic "2026-05-07 — 7.2h" [ref=e177]
+                  - generic "2026-05-08 — 6.6h" [ref=e178]
+                  - generic "2026-05-09 — 7.8h" [ref=e179]
+                  - generic "2026-05-10 — 7.3h" [ref=e180]
+                  - generic "2026-05-11 — 6.6h" [ref=e181]
+                  - generic "2026-05-12 — 7.3h" [ref=e182]
+                  - generic "2026-05-13 — 7.9h" [ref=e183]
+                  - generic "2026-05-14 — 6.6h" [ref=e184]
+                  - generic "2026-05-15 — 8.5h" [ref=e185]
+                  - generic "2026-05-16 — 7.3h" [ref=e186]
+                  - generic "2026-05-17 — 7.0h" [ref=e187]
+                  - generic "2026-05-18" [ref=e188]
+                - generic [ref=e189]:
+                  - generic [ref=e190]: 04-19
+                  - generic [ref=e191]: 05-18
+            - generic [ref=e192]:
+              - generic [ref=e193]: STRAIN · DAILY
+              - generic [ref=e194]:
+                - generic "daily values" [ref=e195]:
+                  - generic "2026-04-19 — 14.9" [ref=e196]
+                  - generic "2026-04-20 — 15.0" [ref=e197]
+                  - generic "2026-04-21 — 11.8" [ref=e198]
+                  - generic "2026-04-22 — 12.6" [ref=e199]
+                  - generic "2026-04-23 — 12.0" [ref=e200]
+                  - generic "2026-04-24 — 10.3" [ref=e201]
+                  - generic "2026-04-25 — 11.8" [ref=e202]
+                  - generic "2026-04-26 — 15.8" [ref=e203]
+                  - generic "2026-04-27 — 8.6" [ref=e204]
+                  - generic "2026-04-28 — 17.7" [ref=e205]
+                  - generic "2026-04-29 — 8.3" [ref=e206]
+                  - generic "2026-04-30 — 16.1" [ref=e207]
+                  - generic "2026-05-01 — 11.5" [ref=e208]
+                  - generic "2026-05-02 — 12.8" [ref=e209]
+                  - generic "2026-05-03 — 13.1" [ref=e210]
+                  - generic "2026-05-04 — 15.9" [ref=e211]
+                  - generic "2026-05-05 — 14.3" [ref=e212]
+                  - generic "2026-05-06 — 16.5" [ref=e213]
+                  - generic "2026-05-07 — 15.2" [ref=e214]
+                  - generic "2026-05-08 — 13.6" [ref=e215]
+                  - generic "2026-05-09 — 14.2" [ref=e216]
+                  - generic "2026-05-10 — 11.5" [ref=e217]
+                  - generic "2026-05-11 — 10.3" [ref=e218]
+                  - generic "2026-05-12 — 16.6" [ref=e219]
+                  - generic "2026-05-13 — 8.8" [ref=e220]
+                  - generic "2026-05-14 — 16.2" [ref=e221]
+                  - generic "2026-05-15 — 11.7" [ref=e222]
+                  - generic "2026-05-16 — 9.3" [ref=e223]
+                  - generic "2026-05-17 — 9.9" [ref=e224]
+                  - generic "2026-05-18" [ref=e225]
+                - generic [ref=e226]:
+                  - generic [ref=e227]: 04-19
+                  - generic [ref=e228]: 05-18
+            - generic [ref=e229]:
+              - generic [ref=e230]: WORKOUTS · COUNT
+              - generic [ref=e231]:
+                - generic "daily values" [ref=e232]:
+                  - generic "2026-04-19 — 1.0" [ref=e233]
+                  - generic "2026-04-20" [ref=e234]
+                  - generic "2026-04-21" [ref=e235]
+                  - generic "2026-04-22 — 1.0" [ref=e236]
+                  - generic "2026-04-23" [ref=e237]
+                  - generic "2026-04-24 — 1.0" [ref=e238]
+                  - generic "2026-04-25" [ref=e239]
+                  - generic "2026-04-26" [ref=e240]
+                  - generic "2026-04-27 — 1.0" [ref=e241]
+                  - generic "2026-04-28" [ref=e242]
+                  - generic "2026-04-29 — 1.0" [ref=e243]
+                  - generic "2026-04-30" [ref=e244]
+                  - generic "2026-05-01" [ref=e245]
+                  - generic "2026-05-02 — 1.0" [ref=e246]
+                  - generic "2026-05-03" [ref=e247]
+                  - generic "2026-05-04 — 1.0" [ref=e248]
+                  - generic "2026-05-05" [ref=e249]
+                  - generic "2026-05-06" [ref=e250]
+                  - generic "2026-05-07 — 1.0" [ref=e251]
+                  - generic "2026-05-08" [ref=e252]
+                  - generic "2026-05-09 — 1.0" [ref=e253]
+                  - generic "2026-05-10" [ref=e254]
+                  - generic "2026-05-11" [ref=e255]
+                  - generic "2026-05-12 — 1.0" [ref=e256]
+                  - generic "2026-05-13" [ref=e257]
+                  - generic "2026-05-14 — 1.0" [ref=e258]
+                  - generic "2026-05-15" [ref=e259]
+                  - generic "2026-05-16" [ref=e260]
+                  - generic "2026-05-17 — 1.0" [ref=e261]
+                  - generic "2026-05-18" [ref=e262]
+                - generic [ref=e263]:
+                  - generic [ref=e264]: 04-19
+                  - generic [ref=e265]: 05-18
+        - generic [ref=e266]:
+          - generic [ref=e267]: RECENT WORKOUTS (WHOOP)
+          - list [ref=e268]:
+            - listitem [ref=e269]:
+              - generic [ref=e270]: weightlifting
+              - generic [ref=e271]: 5/17/2026
+              - generic [ref=e272]: strain 13.3
+            - listitem [ref=e273]:
+              - generic [ref=e274]: weightlifting
+              - generic [ref=e275]: 5/14/2026
+              - generic [ref=e276]: strain 9.9
+            - listitem [ref=e277]:
+              - generic [ref=e278]: weightlifting
+              - generic [ref=e279]: 5/12/2026
+              - generic [ref=e280]: strain 10.2
+            - listitem [ref=e281]:
+              - generic [ref=e282]: weightlifting
+              - generic [ref=e283]: 5/9/2026
+              - generic [ref=e284]: strain 8.1
+            - listitem [ref=e285]:
+              - generic [ref=e286]: weightlifting
+              - generic [ref=e287]: 5/7/2026
+              - generic [ref=e288]: strain 12.9
+            - listitem [ref=e289]:
+              - generic [ref=e290]: weightlifting
+              - generic [ref=e291]: 5/4/2026
+              - generic [ref=e292]: strain 13.3
+            - listitem [ref=e293]:
+              - generic [ref=e294]: weightlifting
+              - generic [ref=e295]: 5/2/2026
+              - generic [ref=e296]: strain 14.4
+            - listitem [ref=e297]:
+              - generic [ref=e298]: weightlifting
+              - generic [ref=e299]: 4/29/2026
+              - generic [ref=e300]: strain 8.2
+            - listitem [ref=e301]:
+              - generic [ref=e302]: weightlifting
+              - generic [ref=e303]: 4/27/2026
+              - generic [ref=e304]: strain 11.1
+            - listitem [ref=e305]:
+              - generic [ref=e306]: weightlifting
+              - generic [ref=e307]: 4/24/2026
+              - generic [ref=e308]: strain 13.6
+  - alert [ref=e309]

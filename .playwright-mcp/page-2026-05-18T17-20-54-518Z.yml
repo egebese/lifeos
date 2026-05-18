@@ -1,0 +1,165 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: MONDAY, MAY 18
+          - heading "Good evening, Demo User" [level=1] [ref=e8]
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - generic [ref=e11]: BMI
+            - generic [ref=e12]: "24.7"
+          - generic [ref=e13]:
+            - generic [ref=e14]: TDEE · EST
+            - generic [ref=e15]: "2730"
+          - generic [ref=e16]:
+            - generic [ref=e17]: TARGET
+            - generic [ref=e18]: "2230"
+          - generic [ref=e19]:
+            - generic [ref=e20]: WEIGHT
+            - generic [ref=e21]: 78.4kg
+          - generic [ref=e22]:
+            - generic [ref=e23]: GOAL
+            - generic [ref=e24]: CUT
+        - generic [ref=e25]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - img [ref=e30]
+              - text: KCAL TODAY
+            - generic [ref=e32]:
+              - generic [ref=e33]: "1807"
+              - generic [ref=e34]: / 2230
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - img [ref=e61]
+              - text: STRAIN
+            - generic [ref=e64]: "9.9"
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - img [ref=e91]
+                - text: SLEEP
+              - generic [ref=e93]:
+                - generic [ref=e94]: "7.0"
+                - generic [ref=e95]: h
+            - generic [ref=e96]: PERFORMANCE 88%
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - img [ref=e101]
+              - text: WEIGHT
+            - generic [ref=e105]:
+              - generic [ref=e106]: "78.4"
+              - generic [ref=e107]: kg
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - img [ref=e111]
+              - text: RECOVERY · TODAY
+            - generic [ref=e114]:
+              - img [ref=e115]
+              - generic [ref=e118]:
+                - generic [ref=e119]: "56"
+                - generic [ref=e120]: "%"
+                - generic [ref=e121]: MAY 17
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - generic [ref=e124]:
+                  - img [ref=e126]
+                  - text: HRV
+                - generic [ref=e128]:
+                  - generic [ref=e129]: "53"
+                  - generic [ref=e130]: ms
+              - generic [ref=e131]:
+                - generic [ref=e132]:
+                  - img [ref=e134]
+                  - text: RHR
+                - generic [ref=e137]:
+                  - generic [ref=e138]: "55"
+                  - generic [ref=e139]: bpm
+          - generic [ref=e140]:
+            - generic [ref=e141]:
+              - generic [ref=e142]: TODAY'S MACROS
+              - generic [ref=e143]:
+                - text: "1807"
+                - generic [ref=e144]: / 2230 kcal · 81%
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]:
+                  - img [ref=e149]
+                  - text: PROTEIN
+                - generic [ref=e152]:
+                  - generic [ref=e153]: "135"
+                  - generic [ref=e154]: g
+                  - generic [ref=e155]: / 157
+              - generic [ref=e158]:
+                - generic [ref=e159]:
+                  - img [ref=e161]
+                  - text: CARBS
+                - generic [ref=e170]:
+                  - generic [ref=e171]: "168"
+                  - generic [ref=e172]: g
+                  - generic [ref=e173]: / 233
+              - generic [ref=e176]:
+                - generic [ref=e177]:
+                  - img [ref=e179]
+                  - text: FAT
+                - generic [ref=e181]:
+                  - generic [ref=e182]: "60"
+                  - generic [ref=e183]: g
+                  - generic [ref=e184]: / 74
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - generic [ref=e189]: DISTRIBUTION · BY KCAL
+                - generic [ref=e190]: P 31% · C 38% · F 31%
+              - generic [ref=e195]:
+                - generic [ref=e196]:
+                  - generic [ref=e197]: KCAL LEFT
+                  - generic [ref=e198]: "423"
+                - generic [ref=e199]:
+                  - generic [ref=e200]: P LEFT
+                  - generic [ref=e201]: 22g
+                - generic [ref=e202]:
+                  - generic [ref=e203]: C LEFT
+                  - generic [ref=e204]: 65g
+                - generic [ref=e205]:
+                  - generic [ref=e206]: F LEFT
+                  - generic [ref=e207]: 14g
+        - generic [ref=e209]:
+          - generic [ref=e210]: LAST WORKOUT
+          - generic [ref=e211]:
+            - generic [ref=e212]: May 17
+            - generic [ref=e213]: COMPLETED
+            - link "OPEN →" [ref=e214] [cursor=pointer]:
+              - /url: /workouts/6fed4a3f-603e-4a99-a321-fd8e85f4acfc
+        - generic [ref=e215]:
+          - link "START WORKOUT →" [ref=e216] [cursor=pointer]:
+            - /url: /workouts/new
+          - link "LOG MEAL →" [ref=e217] [cursor=pointer]:
+            - /url: /food/new
+          - link "GENERATE PLAN →" [ref=e218] [cursor=pointer]:
+            - /url: /food/plan
+          - link "ANALYSIS →" [ref=e219] [cursor=pointer]:
+            - /url: /analysis
+    - navigation [ref=e220]:
+      - generic [ref=e221]:
+        - link "DASH" [ref=e222] [cursor=pointer]:
+          - /url: /
+          - img [ref=e223]
+          - generic [ref=e228]: DASH
+        - link "TRAIN" [ref=e230] [cursor=pointer]:
+          - /url: /workouts
+          - img [ref=e231]
+          - generic [ref=e233]: TRAIN
+        - link "FOOD" [ref=e234] [cursor=pointer]:
+          - /url: /food
+          - img [ref=e235]
+          - generic [ref=e238]: FOOD
+        - link "WHOOP" [ref=e239] [cursor=pointer]:
+          - /url: /whoop
+          - img [ref=e240]
+          - generic [ref=e242]: WHOOP
+        - link "ME" [ref=e243] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e244]
+          - generic [ref=e247]: ME
+  - alert [ref=e248]

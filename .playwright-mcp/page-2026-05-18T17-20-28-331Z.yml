@@ -1,0 +1,73 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "LifeOS — home" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - text: LifeOS
+        - navigation [ref=e7]:
+          - list [ref=e8]:
+            - listitem [ref=e9]:
+              - link "Dashboard" [ref=e10] [cursor=pointer]:
+                - /url: /
+                - text: Dashboard
+            - listitem [ref=e12]:
+              - link "Workouts" [ref=e13] [cursor=pointer]:
+                - /url: /workouts
+                - text: Workouts
+            - listitem [ref=e15]:
+              - link "Programs" [ref=e16] [cursor=pointer]:
+                - /url: /programs
+                - text: Programs
+            - listitem [ref=e18]:
+              - link "Food" [ref=e19] [cursor=pointer]:
+                - /url: /food
+                - text: Food
+            - listitem [ref=e21]:
+              - link "Meal Plan" [ref=e22] [cursor=pointer]:
+                - /url: /food/plan
+                - text: Meal Plan
+            - listitem [ref=e24]:
+              - link "Pantry" [ref=e25] [cursor=pointer]:
+                - /url: /pantry
+                - text: Pantry
+            - listitem [ref=e27]:
+              - link "Whoop" [ref=e28] [cursor=pointer]:
+                - /url: /whoop
+                - text: Whoop
+            - listitem [ref=e30]:
+              - link "Analysis" [ref=e31] [cursor=pointer]:
+                - /url: /analysis
+                - text: Analysis
+            - listitem [ref=e33]:
+              - link "Profile" [ref=e34] [cursor=pointer]:
+                - /url: /profile
+                - text: Profile
+        - generic [ref=e36]:
+          - button "Switch to dark theme" [ref=e37] [cursor=pointer]:
+            - img [ref=e38]
+          - button "Reset demo data" [ref=e40] [cursor=pointer]:
+            - img [ref=e41]
+    - main [ref=e46]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: TRAINING
+            - heading "programs" [level=1] [ref=e52]
+          - link "+ NEW" [ref=e53] [cursor=pointer]:
+            - /url: /programs/new
+            - button "+ NEW" [ref=e54]
+        - generic [ref=e55]:
+          - link "CUSTOM Push / Pull / Legs Classic 6-day hypertrophy split. Push on Mon/Thu, Pull on Tue/Fri, Legs on Wed/Sat." [ref=e56] [cursor=pointer]:
+            - /url: /programs/6f13d432-3725-4e5f-8110-a0a5962139eb
+            - generic [ref=e57]:
+              - generic [ref=e58]: CUSTOM
+              - generic [ref=e59]: Push / Pull / Legs
+              - generic [ref=e60]: Classic 6-day hypertrophy split. Push on Mon/Thu, Pull on Tue/Fri, Legs on Wed/Sat.
+          - link "CUSTOM Upper / Lower 4-Day Balanced 4-day intermediate routine. Heavy upper Mon/Thu, lower Tue/Fri." [ref=e61] [cursor=pointer]:
+            - /url: /programs/fbfdf6e3-0ae6-4cf8-bd01-01ccbd6dd1ee
+            - generic [ref=e62]:
+              - generic [ref=e63]: CUSTOM
+              - generic [ref=e64]: Upper / Lower 4-Day
+              - generic [ref=e65]: Balanced 4-day intermediate routine. Heavy upper Mon/Thu, lower Tue/Fri.
+  - alert [ref=e66]

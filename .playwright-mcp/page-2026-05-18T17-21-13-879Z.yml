@@ -1,0 +1,112 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - generic [ref=e8]: FOOD LOG
+            - heading "today" [level=1] [ref=e9]
+          - link "+ LOG" [ref=e10] [cursor=pointer]:
+            - /url: /food/new
+            - button "+ LOG" [ref=e11]
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - text: TOTALS
+          - generic [ref=e19]:
+            - generic [ref=e20]:
+              - generic [ref=e21]:
+                - img [ref=e23]
+                - text: KCAL
+              - generic [ref=e26]: "1807"
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - img [ref=e30]
+                - text: PROTEIN
+              - generic [ref=e33]:
+                - generic [ref=e34]: "135"
+                - generic [ref=e35]: g
+            - generic [ref=e36]:
+              - generic [ref=e37]:
+                - img [ref=e39]
+                - text: CARBS
+              - generic [ref=e48]:
+                - generic [ref=e49]: "168"
+                - generic [ref=e50]: g
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - img [ref=e54]
+                - text: FAT
+              - generic [ref=e56]:
+                - generic [ref=e57]: "60"
+                - generic [ref=e58]: g
+          - generic [ref=e64]:
+            - generic [ref=e65]: P 135g
+            - generic [ref=e66]: C 168g
+            - generic [ref=e67]: F 60g
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e71]:
+                - img [ref=e72]
+                - text: BREAKFAST · 1
+              - generic [ref=e74]: 324 kcal · P35 C30 F7
+            - list [ref=e75]:
+              - listitem [ref=e76]:
+                - generic [ref=e77]:
+                  - generic [ref=e78]: Protein smoothie
+                  - generic [ref=e79]: P35 · C30 · F709:26 AM
+                - generic [ref=e80]:
+                  - generic [ref=e81]: "324"
+                  - generic [ref=e82]: KCAL
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - img [ref=e86]
+                - text: LUNCH · 1
+              - generic [ref=e92]: 725 kcal · P47 C75 F24
+            - list [ref=e93]:
+              - listitem [ref=e94]:
+                - generic [ref=e95]:
+                  - generic [ref=e96]: Chicken burrito bowl
+                  - generic [ref=e97]: P47 · C75 · F2401:24 PM
+                - generic [ref=e98]:
+                  - generic [ref=e99]: "725"
+                  - generic [ref=e100]: KCAL
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - img [ref=e104]
+                - text: DINNER · 1
+              - generic [ref=e106]: 758 kcal · P53 C63 F30
+            - list [ref=e107]:
+              - listitem [ref=e108]:
+                - generic [ref=e109]:
+                  - generic [ref=e110]: Steak with sweet potato
+                  - generic [ref=e111]: P53 · C63 · F3008:09 PM
+                - generic [ref=e112]:
+                  - generic [ref=e113]: "758"
+                  - generic [ref=e114]: KCAL
+    - navigation [ref=e115]:
+      - generic [ref=e116]:
+        - link "DASH" [ref=e117] [cursor=pointer]:
+          - /url: /
+          - img [ref=e118]
+          - generic [ref=e123]: DASH
+        - link "TRAIN" [ref=e124] [cursor=pointer]:
+          - /url: /workouts
+          - img [ref=e125]
+          - generic [ref=e127]: TRAIN
+        - link "FOOD" [ref=e128] [cursor=pointer]:
+          - /url: /food
+          - img [ref=e129]
+          - generic [ref=e132]: FOOD
+        - link "WHOOP" [ref=e134] [cursor=pointer]:
+          - /url: /whoop
+          - img [ref=e135]
+          - generic [ref=e137]: WHOOP
+        - link "ME" [ref=e138] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e139]
+          - generic [ref=e142]: ME
+  - alert [ref=e143]
