@@ -19,17 +19,19 @@ function addDays(ymd: string, n: number): string {
 type Props = {
   selected: string; // YYYY-MM-DD
   today: string;    // YYYY-MM-DD
+  basePath?: string; // defaults to "/"
 };
 
-export function DayNav({ selected, today }: Props) {
+export function DayNav({ selected, today, basePath = "/" }: Props) {
   const router = useRouter();
   const t = useT();
   const prev = addDays(selected, -1);
   const next = addDays(selected, 1);
   const isToday = selected === today;
-  const prevHref = `/?day=${prev}`;
-  const nextHref = `/?day=${next}`;
-  const todayHref = `/`;
+  const sep = basePath.includes("?") ? "&" : "?";
+  const prevHref = `${basePath}${sep}day=${prev}`;
+  const nextHref = `${basePath}${sep}day=${next}`;
+  const todayHref = basePath;
 
   // Arrow keys: ← prev, → next (if not on today), T = today
   useEffect(() => {

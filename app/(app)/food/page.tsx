@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, asc, eq, gte } from "drizzle-orm";
+import { and, asc, eq, gte, lt } from "drizzle-orm";
 import {
   Apple,
   Coffee,
@@ -20,8 +20,16 @@ import { Card, CardLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MacroBar } from "@/components/food/macro-bar";
 import { MonoStat } from "@/components/nothing/mono-stat";
+import { DayNav } from "@/components/dashboard/day-nav";
 
 export const dynamic = "force-dynamic";
+
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 const MEAL_ORDER: Meal[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -32,16 +40,34 @@ const MEAL_ICONS: Record<Meal, LucideIcon> = {
   snack: Apple,
 };
 
-export default async function FoodPage() {
+export default async function FoodPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ day?: string }>;
+}) {
   const { user } = await requireSession();
-  const t = tFor(await getLocale());
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const sp = await searchParams;
+  const locale = await getLocale();
+  const t = tFor(locale);
+  const todayKey = ymdLocal(new Date());
+  const selectedKey =
+    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : todayKey;
+  const isToday = selectedKey === todayKey;
+
+  const dayStart = new Date(`${selectedKey}T00:00:00`);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
 
   const today = await db
     .select()
     .from(foodEntries)
-    .where(and(eq(foodEntries.userId, user.id), gte(foodEntries.consumedAt, startOfDay)))
+    .where(
+      and(
+        eq(foodEntries.userId, user.id),
+        gte(foodEntries.consumedAt, dayStart),
+        lt(foodEntries.consumedAt, dayEnd),
+      ),
+    )
     .orderBy(asc(foodEntries.consumedAt));
 
   const kcal = today.reduce((a, e) => a + Number(e.kcal ?? 0), 0);
@@ -63,16 +89,32 @@ export default async function FoodPage() {
     snack: t("meal.snacks"),
   };
 
+  const dayTitle = isToday
+    ? t("food.title")
+    : dayStart.toLocaleDateString(locale === "tr" ? "tr-TR" : "en-US", {
+        weekday: "long",
+        day: "2-digit",
+        month: "short",
+      });
+
   return (
     <div className="space-y-6">
-      <header className="flex items-baseline justify-between">
-        <div>
-          <div className="mono-label">{t("food.foodLog")}</div>
-          <h1 className="font-display text-4xl mt-1">{t("food.title")}</h1>
+      <header className="flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <div className="mono-label">
+            {t("food.foodLog")}
+            {!isToday && (
+              <span className="ml-2 text-[color:var(--accent)]">{t("dash.viewing")}</span>
+            )}
+          </div>
+          <h1 className="font-display text-4xl mt-1 truncate">{dayTitle}</h1>
         </div>
-        <Link href="/food/new">
-          <Button>{t("food.log")}</Button>
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <DayNav selected={selectedKey} today={todayKey} basePath="/food" />
+          <Link href="/food/new">
+            <Button>{t("food.log")}</Button>
+          </Link>
+        </div>
       </header>
 
       <Card>
