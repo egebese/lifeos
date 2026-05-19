@@ -5,6 +5,7 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { exercises, programDays, programExercises, programs } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
+import { getLocale, tFor } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { StartDayForm } from "./start-day-form";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProgramDetail({ params }: { params: Promise<{ id: string }> }) {
   const { user } = await requireSession();
+  const t = tFor(await getLocale());
   const { id } = await params;
   const [p] = await db.select().from(programs).where(eq(programs.id, id)).limit(1);
   if (!p) return notFound();
@@ -63,7 +65,7 @@ export default async function ProgramDetail({ params }: { params: Promise<{ id: 
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <Link href="/programs" className="mono-label hover:text-[color:var(--text-display)]">
-            ← PROGRAMS
+            {t("prog.backToPrograms")}
           </Link>
           <h1 className="font-display text-4xl mt-2 break-words">{p.name}</h1>
           {p.description && (
@@ -76,7 +78,7 @@ export default async function ProgramDetail({ params }: { params: Promise<{ id: 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Link href={`/programs/${p.id}/edit`} className="btn btn--outline btn--sm">
               <Pencil size={14} strokeWidth={1.5} className="mr-2" />
-              EDIT
+              {t("prog.edit")}
             </Link>
             <DeleteProgramButton programId={p.id} programName={p.name} />
           </div>
@@ -88,7 +90,7 @@ export default async function ProgramDetail({ params }: { params: Promise<{ id: 
           <Card key={day.id}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="mono-label">DAY {day.dayIndex + 1}</div>
+                <div className="mono-label">{t("prog.day")} {day.dayIndex + 1}</div>
                 <div className="font-display text-xl mt-1">{day.name}</div>
               </div>
               <StartDayForm programId={p.id} programDayId={day.id} />

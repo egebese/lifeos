@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { Card, CardLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +13,7 @@ type Insights = {
 };
 
 export function WeeklyInsights() {
+  const t = useT();
   const [data, setData] = useState<Insights | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +36,9 @@ export function WeeklyInsights() {
   return (
     <Card>
       <div className="flex items-center justify-between mb-3">
-        <CardLabel>AI · WEEKLY SUMMARY</CardLabel>
+        <CardLabel>{t("anal.weeklySummary")}</CardLabel>
         <Button variant="outline" onClick={gen} disabled={busy}>
-          {busy ? "ANALYZING…" : "GENERATE →"}
+          {busy ? t("anal.analyzing") : t("anal.generate")}
         </Button>
       </div>
       {error && <div className="font-mono text-[11px] text-[color:var(--accent)]">{error}</div>}
@@ -45,7 +47,7 @@ export function WeeklyInsights() {
           <p className="font-body text-[color:var(--text-display)]">{data.summary}</p>
           {data.highlights.length > 0 && (
             <div>
-              <div className="mono-label mb-1">HIGHLIGHTS</div>
+              <div className="mono-label mb-1">{t("anal.highlights")}</div>
               <ul className="text-sm space-y-1">
                 {data.highlights.map((h, i) => (
                   <li key={i}>· {h}</li>
@@ -55,7 +57,7 @@ export function WeeklyInsights() {
           )}
           {data.warnings.length > 0 && (
             <div>
-              <div className="mono-label mb-1 text-[color:var(--warning)]">WARNINGS</div>
+              <div className="mono-label mb-1 text-[color:var(--warning)]">{t("anal.warnings")}</div>
               <ul className="text-sm space-y-1">
                 {data.warnings.map((h, i) => (
                   <li key={i}>· {h}</li>
@@ -65,7 +67,7 @@ export function WeeklyInsights() {
           )}
           {data.recommendations.length > 0 && (
             <div>
-              <div className="mono-label mb-1 text-[color:var(--accent)]">RECOMMENDATIONS</div>
+              <div className="mono-label mb-1 text-[color:var(--accent)]">{t("anal.recommendations")}</div>
               <ul className="text-sm space-y-1">
                 {data.recommendations.map((h, i) => (
                   <li key={i}>· {h}</li>
@@ -76,7 +78,7 @@ export function WeeklyInsights() {
         </div>
       ) : (
         <div className="font-mono text-sm text-[color:var(--text-secondary)]">
-          Click GENERATE to get a Sonnet-powered review of the last 7 days.
+          {t("anal.clickGenerate")}
         </div>
       )}
     </Card>

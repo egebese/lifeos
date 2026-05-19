@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { exercises } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
+import { getLocale, tFor } from "@/lib/i18n/server";
 import { ExerciseLibrary } from "./exercise-library";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export default async function ExercisesPage({
   searchParams: Promise<{ q?: string; body_part?: string }>;
 }) {
   const { user } = await requireSession();
+  const t = tFor(await getLocale());
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const bodyPart = (sp.body_part ?? "").trim();
@@ -38,13 +40,13 @@ export default async function ExercisesPage({
   return (
     <div className="space-y-6">
       <header>
-        <div className="mono-label">LIBRARY · 1324 EXERCISES</div>
-        <h1 className="font-display text-4xl mt-1">exercises</h1>
+        <div className="mono-label">{t("ex.library1324")}</div>
+        <h1 className="font-display text-4xl mt-1">{t("ex.title")}</h1>
       </header>
 
       <form className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-48">
-          <div className="mono-label mb-1">SEARCH</div>
+          <div className="mono-label mb-1">{t("ex.search")}</div>
           <input
             name="q"
             defaultValue={q}
@@ -53,13 +55,13 @@ export default async function ExercisesPage({
           />
         </div>
         <div>
-          <div className="mono-label mb-1">BODY PART</div>
+          <div className="mono-label mb-1">{t("ex.bodyPart")}</div>
           <select
             name="body_part"
             defaultValue={bodyPart}
             className="bg-transparent border-b border-[color:var(--border-visible)] py-3 px-1 font-body text-base text-[color:var(--text-display)]"
           >
-            <option value="">all</option>
+            <option value="">{t("ex.all")}</option>
             {bodyParts
               .filter((b) => b.bodyPart)
               .map((b) => (
@@ -70,7 +72,7 @@ export default async function ExercisesPage({
           </select>
         </div>
         <button type="submit" className="btn btn--primary btn--sm">
-          FILTER →
+          {t("ex.filter")}
         </button>
       </form>
 

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function NewProgramForm() {
   const router = useRouter();
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,11 +33,11 @@ export function NewProgramForm() {
   return (
     <form onSubmit={submit} className="space-y-5">
       <div>
-        <div className="mono-label mb-1">NAME</div>
+        <div className="mono-label mb-1">{t("prog.name")}</div>
         <Input value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
       <div>
-        <div className="mono-label mb-1">DESCRIPTION</div>
+        <div className="mono-label mb-1">{t("prog.description")}</div>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -45,7 +47,7 @@ export function NewProgramForm() {
       </div>
       <div className="flex justify-end">
         <Button type="submit" disabled={busy}>
-          {busy ? "…" : "CREATE →"}
+          {busy ? "…" : t("prog.createButton")}
         </Button>
       </div>
     </form>

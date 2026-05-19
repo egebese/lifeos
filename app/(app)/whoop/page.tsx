@@ -2,6 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { whoopRecovery, whoopSleep, whoopStrain, whoopTokens, whoopWorkouts } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
+import { getLocale, tFor } from "@/lib/i18n/server";
 import { Card, CardLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MonoStat } from "@/components/nothing/mono-stat";
@@ -18,6 +19,7 @@ export default async function WhoopPage({
   searchParams: Promise<{ connected?: string }>;
 }) {
   const { user } = await requireSession();
+  const t = tFor(await getLocale());
   const sp = await searchParams;
   const [tok] = await db
     .select({ userId: whoopTokens.userId })
@@ -67,27 +69,27 @@ export default async function WhoopPage({
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-4">
         <div>
-          <div className="mono-label">DEVICE · WHOOP</div>
-          <h1 className="font-display text-4xl mt-1">whoop</h1>
+          <div className="mono-label">{t("whoop.device")}</div>
+          <h1 className="font-display text-4xl mt-1">{t("whoop.title")}</h1>
         </div>
         {connected ? <SyncWhoopButton /> : null}
       </header>
 
       {sp.connected === "1" && (
         <div className="font-mono text-[11px] text-[color:var(--success)] uppercase tracking-[0.1em]">
-          → CONNECTED. RUN SYNC TO PULL DATA.
+          {t("whoop.connected")}
         </div>
       )}
 
       {!connected ? (
         <Card>
-          <CardLabel>NOT CONNECTED</CardLabel>
+          <CardLabel>{t("whoop.notConnected")}</CardLabel>
           <p className="font-body text-sm text-[color:var(--text-secondary)] mt-2">
-            Connect your Whoop account to sync recovery, sleep, strain, and workouts.
+            {t("whoop.connectAccount")}
           </p>
           <div className="mt-4">
             <Link href="/api/whoop/connect">
-              <Button>CONNECT WHOOP →</Button>
+              <Button>{t("whoop.connectButton")}</Button>
             </Link>
           </div>
         </Card>
@@ -95,20 +97,20 @@ export default async function WhoopPage({
         <>
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="flex flex-col items-center">
-              <CardLabel>RECOVERY</CardLabel>
+              <CardLabel>{t("whoop.recovery")}</CardLabel>
               <Gauge
                 value={rec?.score ?? 0}
                 max={100}
                 size={160}
                 unit="%"
-                label="TODAY"
+                label={t("whoop.today")}
                 accentByValue
               />
             </Card>
             <Card>
-              <CardLabel>SLEEP</CardLabel>
+              <CardLabel>{t("whoop.sleep")}</CardLabel>
               <MonoStat
-                label="HOURS"
+                label={t("whoop.hours")}
                 value={
                   sleep
                     ? (
@@ -121,20 +123,20 @@ export default async function WhoopPage({
               />
               <div className="mt-3">
                 <MonoStat
-                  label="PERFORMANCE"
+                  label={t("whoop.performance")}
                   value={sleep?.performancePct ? Number(sleep.performancePct).toFixed(0) : "—"}
                   unit="%"
                 />
               </div>
             </Card>
             <Card>
-              <CardLabel>STRAIN</CardLabel>
+              <CardLabel>{t("whoop.strain")}</CardLabel>
               <MonoStat
-                label="SCORE"
+                label={t("whoop.score")}
                 value={strain?.score ? Number(strain.score).toFixed(1) : "—"}
               />
               <div className="mt-3">
-                <MonoStat label="AVG HR" value={strain?.avgHr ?? "—"} unit="bpm" />
+                <MonoStat label={t("whoop.avgHr")} value={strain?.avgHr ?? "—"} unit="bpm" />
               </div>
             </Card>
           </section>
@@ -143,19 +145,19 @@ export default async function WhoopPage({
 
           {recentWorkouts.length > 0 && (
             <Card>
-              <CardLabel>RECENT WORKOUTS (WHOOP)</CardLabel>
+              <CardLabel>{t("whoop.recentWorkouts")}</CardLabel>
               <ul className="mt-2 space-y-0">
                 {recentWorkouts.map((w) => (
                   <li
                     key={w.id}
                     className="grid grid-cols-[1fr_auto_auto] gap-3 py-2 border-b border-[color:var(--border)]"
                   >
-                    <span className="font-body text-sm">{w.sport ?? "workout"}</span>
+                    <span className="font-body text-sm">{w.sport ?? t("whoop.workout")}</span>
                     <span className="font-mono text-[11px] text-[color:var(--text-secondary)]">
                       {new Date(w.start).toLocaleDateString("en-US")}
                     </span>
                     <span className="font-mono text-[11px] text-[color:var(--text-display)]">
-                      {w.strain ? `strain ${Number(w.strain).toFixed(1)}` : ""}
+                      {w.strain ? `${t("whoop.strain")} ${Number(w.strain).toFixed(1)}` : ""}
                     </span>
                   </li>
                 ))}

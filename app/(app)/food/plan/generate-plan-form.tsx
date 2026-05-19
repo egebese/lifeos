@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 
 export function GeneratePlanForm() {
   const router = useRouter();
+  const t = useT();
   const [days, setDays] = useState("7");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,20 +38,20 @@ export function GeneratePlanForm() {
     <div className="space-y-4 mt-2">
       <div className="flex items-end gap-3">
         <div>
-          <div className="mono-label mb-1">DAYS</div>
+          <div className="mono-label mb-1">{t("plan.genDays")}</div>
           <Select value={days} onChange={(e) => setDays(e.target.value)}>
-            <option value="3">3 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
+            <option value="3">{t("plan.gen3Days")}</option>
+            <option value="7">{t("plan.gen7Days")}</option>
+            <option value="14">{t("plan.gen14Days")}</option>
           </Select>
         </div>
         <Button onClick={gen} disabled={busy} variant="accent">
-          {busy ? "GENERATING…" : "GENERATE →"}
+          {busy ? t("plan.generatingForm") : t("plan.generateForm")}
         </Button>
       </div>
       {error && <div className="font-mono text-[11px] text-[color:var(--accent)]">{error}</div>}
       <div className="font-mono text-[11px] text-[color:var(--text-disabled)]">
-        Uses profile goal + preferences + pantry. Sonnet 4.6 via fal openrouter.
+        {t("plan.usesProfile")}
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import {
 import { db } from "@/lib/db/client";
 import { foodEntries } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
+import { getLocale, tFor } from "@/lib/i18n/server";
 import { Card, CardLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MacroBar } from "@/components/food/macro-bar";
@@ -24,12 +25,6 @@ export const dynamic = "force-dynamic";
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 const MEAL_ORDER: Meal[] = ["breakfast", "lunch", "dinner", "snack"];
-const MEAL_LABELS: Record<Meal, string> = {
-  breakfast: "BREAKFAST",
-  lunch: "LUNCH",
-  dinner: "DINNER",
-  snack: "SNACKS",
-};
 const MEAL_ICONS: Record<Meal, LucideIcon> = {
   breakfast: Coffee,
   lunch: Sun,
@@ -39,6 +34,7 @@ const MEAL_ICONS: Record<Meal, LucideIcon> = {
 
 export default async function FoodPage() {
   const { user } = await requireSession();
+  const t = tFor(await getLocale());
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -60,22 +56,29 @@ export default async function FoodPage() {
     byMeal.get(m)?.push(e);
   }
 
+  const mealLabels: Record<Meal, string> = {
+    breakfast: t("meal.breakfast"),
+    lunch: t("meal.lunch"),
+    dinner: t("meal.dinner"),
+    snack: t("meal.snacks"),
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-baseline justify-between">
         <div>
-          <div className="mono-label">FOOD LOG</div>
-          <h1 className="font-display text-4xl mt-1">today</h1>
+          <div className="mono-label">{t("food.foodLog")}</div>
+          <h1 className="font-display text-4xl mt-1">{t("food.title")}</h1>
         </div>
         <Link href="/food/new">
-          <Button>+ LOG</Button>
+          <Button>{t("food.log")}</Button>
         </Link>
       </header>
 
       <Card>
         <CardLabel className="flex items-center gap-1.5">
           <UtensilsCrossed size={12} strokeWidth={1.75} />
-          TOTALS
+          {t("food.totals")}
         </CardLabel>
         <div className="grid grid-cols-4 gap-3 mb-4">
           <MonoStat
@@ -84,19 +87,19 @@ export default async function FoodPage() {
             icon={<Flame size={12} strokeWidth={1.75} />}
           />
           <MonoStat
-            label="PROTEIN"
+            label={t("food.protein")}
             value={Math.round(p)}
             unit="g"
             icon={<Drumstick size={12} strokeWidth={1.75} />}
           />
           <MonoStat
-            label="CARBS"
+            label={t("food.carbs")}
             value={Math.round(c)}
             unit="g"
             icon={<Wheat size={12} strokeWidth={1.75} />}
           />
           <MonoStat
-            label="FAT"
+            label={t("food.fat")}
             value={Math.round(f)}
             unit="g"
             icon={<Droplet size={12} strokeWidth={1.75} />}
@@ -109,9 +112,9 @@ export default async function FoodPage() {
         {today.length === 0 ? (
           <Card>
             <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6 text-center">
-              no entries —{" "}
+              {t("food.noEntries")}{" "}
               <Link href="/food/new" className="text-[color:var(--accent)]">
-                add one
+                {t("food.addOne")}
               </Link>
             </div>
           </Card>
@@ -129,7 +132,7 @@ export default async function FoodPage() {
                 <div className="flex items-baseline justify-between mb-2 gap-3">
                   <CardLabel className="mb-0 flex items-center gap-1.5">
                     <MealIcon size={12} strokeWidth={1.75} />
-                    {MEAL_LABELS[meal]} · {items.length}
+                    {mealLabels[meal]} · {items.length} {t("food.items")}
                   </CardLabel>
                   <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)] tabular-nums">
                     {Math.round(mealKcal)} kcal · P{Math.round(mealP)} C{Math.round(mealC)} F{Math.round(mealF)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -11,6 +12,7 @@ import { MonoStat } from "@/components/nothing/mono-stat";
 import { resolveDisplayName } from "@/lib/utils";
 
 export default function ProfilePage() {
+  const t = useT();
   const { state } = useDemoStore();
   const p = state.profile;
   const userEmail = "demo@lifeos.local";
@@ -34,7 +36,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8">
       <header>
-        <div className="mono-label">USER PROFILE</div>
+        <div className="mono-label">{t("prof.userProfile")}</div>
         <h1 className="font-display text-4xl mt-1">{name}</h1>
         <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)] mt-1">
           {userEmail}
@@ -62,22 +64,22 @@ export default function ProfilePage() {
 
       {macros && (
         <Card>
-          <CardLabel>RECOMMENDED MACROS</CardLabel>
+          <CardLabel>{t("prof.recommendedMacros")}</CardLabel>
           <div className="grid grid-cols-3 gap-4 mt-2">
-            <MonoStat label="PROTEIN" value={macros.proteinG} unit="g" />
-            <MonoStat label="CARBS" value={macros.carbsG} unit="g" />
-            <MonoStat label="FAT" value={macros.fatG} unit="g" />
+            <MonoStat label={t("food.protein")} value={macros.proteinG} unit="g" />
+            <MonoStat label={t("food.carbs")} value={macros.carbsG} unit="g" />
+            <MonoStat label={t("food.fat")} value={macros.fatG} unit="g" />
           </div>
         </Card>
       )}
 
       <Card>
-        <CardLabel>EDIT</CardLabel>
+        <CardLabel>{t("prof.edit")}</CardLabel>
         <ProfileForm initial={p} />
       </Card>
 
       <Card>
-        <CardLabel>APPEARANCE</CardLabel>
+        <CardLabel>{t("prof.appearance")}</CardLabel>
         <div className="mt-2 -mx-3">
           <ThemeToggle />
         </div>
@@ -88,7 +90,7 @@ export default function ProfilePage() {
       </Card>
 
       <Card>
-        <CardLabel>SECURITY · CHANGE PASSWORD</CardLabel>
+        <CardLabel>{t("prof.security")}</CardLabel>
         <PasswordForm />
       </Card>
     </div>

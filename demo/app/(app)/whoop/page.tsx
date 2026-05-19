@@ -1,6 +1,7 @@
 "use client";
 
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Card, CardLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MonoStat } from "@/components/nothing/mono-stat";
@@ -9,6 +10,7 @@ import { SyncWhoopButton } from "./sync-button";
 import { WhoopHistory } from "@/components/whoop/whoop-history";
 
 export default function WhoopPage() {
+  const t = useT();
   const { state, update } = useDemoStore();
   const connected = state.whoopConnected;
 
@@ -33,24 +35,24 @@ export default function WhoopPage() {
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-4">
         <div>
-          <div className="mono-label">DEVICE · WHOOP</div>
-          <h1 className="font-display text-4xl mt-1">whoop</h1>
+          <div className="mono-label">{t("whoop.device")}</div>
+          <h1 className="font-display text-4xl mt-1">{t("whoop.title")}</h1>
         </div>
         {connected ? <SyncWhoopButton /> : null}
       </header>
 
       {!connected ? (
         <Card>
-          <CardLabel>NOT CONNECTED</CardLabel>
+          <CardLabel>{t("whoop.notConnected")}</CardLabel>
           <p className="font-body text-sm text-[color:var(--text-secondary)] mt-2">
-            Connect your Whoop account to sync recovery, sleep, strain, and workouts.
+            {t("whoop.connectDesc")}
           </p>
           <p className="font-mono text-[11px] text-[color:var(--text-disabled)] uppercase tracking-[0.08em] mt-2">
-            Demo: clicking CONNECT will toggle the connected state and show seeded data.
+            {t("whoop.demoBehavior")}
           </p>
           <div className="mt-4">
             <Button onClick={() => update({ whoopConnected: true })}>
-              CONNECT WHOOP →
+              {t("whoop.connectButton")}
             </Button>
           </div>
         </Card>
@@ -58,20 +60,20 @@ export default function WhoopPage() {
         <>
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="flex flex-col items-center">
-              <CardLabel>RECOVERY</CardLabel>
+              <CardLabel>{t("whoop.recovery")}</CardLabel>
               <Gauge
                 value={rec?.score ?? 0}
                 max={100}
                 size={160}
                 unit="%"
-                label="TODAY"
+                label={t("whoop.today")}
                 accentByValue
               />
             </Card>
             <Card>
-              <CardLabel>SLEEP</CardLabel>
+              <CardLabel>{t("whoop.sleep")}</CardLabel>
               <MonoStat
-                label="HOURS"
+                label={t("whoop.hours")}
                 value={
                   sleep
                     ? (
@@ -84,20 +86,20 @@ export default function WhoopPage() {
               />
               <div className="mt-3">
                 <MonoStat
-                  label="PERFORMANCE"
+                  label={t("whoop.performance")}
                   value={sleep?.performancePct ? Number(sleep.performancePct).toFixed(0) : "—"}
                   unit="%"
                 />
               </div>
             </Card>
             <Card>
-              <CardLabel>STRAIN</CardLabel>
+              <CardLabel>{t("whoop.strain")}</CardLabel>
               <MonoStat
-                label="SCORE"
+                label={t("whoop.score")}
                 value={strain?.score ? Number(strain.score).toFixed(1) : "—"}
               />
               <div className="mt-3">
-                <MonoStat label="AVG HR" value={strain?.avgHr ?? "—"} unit="bpm" />
+                <MonoStat label={t("whoop.avgHr")} value={strain?.avgHr ?? "—"} unit="bpm" />
               </div>
             </Card>
           </section>
@@ -106,7 +108,7 @@ export default function WhoopPage() {
 
           {recentWorkouts.length > 0 && (
             <Card>
-              <CardLabel>RECENT WORKOUTS (WHOOP)</CardLabel>
+              <CardLabel>{t("whoop.recentWorkouts")}</CardLabel>
               <ul className="mt-2 space-y-0">
                 {recentWorkouts.map((w) => (
                   <li

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function WorkoutsPage() {
+  const t = useT();
   const { state } = useDemoStore();
 
   const recent = [...state.workouts]
@@ -23,20 +25,20 @@ export default function WorkoutsPage() {
     <div className="space-y-6">
       <header className="flex items-baseline justify-between">
         <div>
-          <div className="mono-label">HISTORY</div>
-          <h1 className="font-display text-4xl mt-1">workouts</h1>
+          <div className="mono-label">{t("ex.history")}</div>
+          <h1 className="font-display text-4xl mt-1">{t("ex.workouts")}</h1>
         </div>
         <Link href="/workouts/new">
-          <Button>+ NEW</Button>
+          <Button>{t("ex.new")}</Button>
         </Link>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         <Link href="/programs" className="border border-[color:var(--border-visible)] py-4 px-4 font-mono text-[11px] uppercase tracking-[0.1em] hover:border-[color:var(--text-display)] hover:text-[color:var(--text-display)] text-[color:var(--text-secondary)]">
-          PROGRAMS →
+          {t("ex.programs")} →
         </Link>
         <Link href="/workouts/exercises" className="border border-[color:var(--border-visible)] py-4 px-4 font-mono text-[11px] uppercase tracking-[0.1em] hover:border-[color:var(--text-display)] hover:text-[color:var(--text-display)] text-[color:var(--text-secondary)]">
-          EXERCISE LIBRARY ({libraryCount}) →
+          {t("ex.exerciseLibrary")} ({libraryCount}) →
         </Link>
       </div>
 
@@ -44,9 +46,9 @@ export default function WorkoutsPage() {
         {recent.length === 0 ? (
           <Card>
             <div className="font-mono text-sm text-[color:var(--text-secondary)] py-8 text-center">
-              no workouts yet —{" "}
+              {t("ex.noWorkoutsYet")} —{" "}
               <Link href="/workouts/new" className="text-[color:var(--accent)]">
-                start one
+                {t("ex.startOne")}
               </Link>
             </div>
           </Card>
@@ -69,11 +71,11 @@ export default function WorkoutsPage() {
                     })}
                   </div>
                   <div className="mono-label mt-0.5">
-                    {w.endedAt ? "COMPLETED" : "IN PROGRESS"}
+                    {w.endedAt ? t("ex.completed") : t("ex.inProgress")}
                   </div>
                 </div>
                 <div className="font-mono text-sm text-[color:var(--text-secondary)]">
-                  {setCount} sets
+                  {setCount} {t("ex.sets")}
                 </div>
                 <div className="font-mono text-[11px] text-[color:var(--text-secondary)]">→</div>
               </Link>

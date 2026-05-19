@@ -1,6 +1,7 @@
 "use client";
 
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Card, CardLabel } from "@/components/ui/card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -11,6 +12,7 @@ function dayKey(d: Date) {
 }
 
 export default function AnalysisPage() {
+  const t = useT();
   const { state } = useDemoStore();
   const since90 = new Date(Date.now() - 90 * 86_400_000);
   const since14 = new Date(Date.now() - 14 * 86_400_000);
@@ -62,47 +64,47 @@ export default function AnalysisPage() {
   return (
     <div className="space-y-6">
       <header>
-        <div className="mono-label">TRENDS · AI INSIGHTS</div>
-        <h1 className="font-display text-4xl mt-1">analysis</h1>
+        <div className="mono-label">{t("anal.trendsInsights")}</div>
+        <h1 className="font-display text-4xl mt-1">{t("anal.title")}</h1>
       </header>
 
       <WeeklyInsights />
 
       <Card>
-        <CardLabel>WEIGHT · 90D</CardLabel>
+        <CardLabel>{t("anal.weight90d")}</CardLabel>
         {weightSeries.length > 0 ? (
           <LineChart data={weightSeries} xKey="date" yKey="weight" />
         ) : (
-          <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">no data</div>
+          <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">{t("anal.noData")}</div>
         )}
       </Card>
 
       <Card>
-        <CardLabel>KCAL · 14D</CardLabel>
+        <CardLabel>{t("anal.kcal14d")}</CardLabel>
         {kcalSeries.length > 0 ? (
           <BarChart data={kcalSeries} xKey="date" yKey="kcal" />
         ) : (
-          <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">no data</div>
+          <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">{t("anal.noData")}</div>
         )}
       </Card>
 
       <Card>
-        <CardLabel>RECOVERY · 30D</CardLabel>
+        <CardLabel>{t("anal.recovery30d")}</CardLabel>
         {recSeries.length > 0 ? (
           <LineChart data={recSeries} xKey="date" yKey="score" color="var(--success)" />
         ) : (
           <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">
-            no whoop recovery data
+            {t("anal.noWhoopRecoveryData")}
           </div>
         )}
       </Card>
 
       <Card>
-        <CardLabel>WORKOUT VOLUME · 30D</CardLabel>
+        <CardLabel>{t("anal.workoutVolume30d")}</CardLabel>
         {volumeByMuscle.length > 0 ? (
           <BarChart data={volumeByMuscle} xKey="muscle" yKey="volume" />
         ) : (
-          <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">no workouts</div>
+          <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6">{t("anal.noWorkouts")}</div>
         )}
       </Card>
     </div>
