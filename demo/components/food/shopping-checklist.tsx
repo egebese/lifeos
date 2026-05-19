@@ -1,0 +1,180 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Check, ShoppingBasket, Sparkles } from "lucide-react";
+import { useDemoStore } from "@/lib/demo/store";
+
+export type ShoppingItem = {
+  name: string;
+  qty?: number;
+  unit?: string;
+  aisle?: string;
+  checked?: boolean;
+};
+
+type Props = {
+  shoppingListId: string;
+};
+
+const AISLE_ORDER = ["produce", "meat", "dairy", "pantry", "frozen", "other"];
+
+function aisleLabel(a?: string): string {
+  if (!a) return "OTHER";
+  return a.toUpperCase();
+}
+
+export function ShoppingChecklist({ shoppingListId }: Props) {
+  const { state, update } = useDemoStore();
+  const [hideChecked, setHideChecked] = useState(false);
+
+  const items = useMemo<ShoppingItem[]>(() => {
+    const row = state.shoppingLists.find((s) => s.id === shoppingListId);
+    return ((row?.items as ShoppingItem[] | undefined) ?? []).slice();
+  }, [state.shoppingLists, shoppingListId]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, ShoppingItem[]>();
+    for (const it of items) {
+      const a = (it.aisle ?? "other").toLowerCase();
+      const arr = map.get(a) ?? [];
+      arr.push(it);
+      map.set(a, arr);
+    }
+    const ordered: Array<[string, ShoppingItem[]]> = [];
+    for (const a of AISLE_ORDER) {
+      if (map.has(a)) ordered.push([a, map.get(a)!]);
+      map.delete(a);
+    }
+    for (const [a, v] of map) ordered.push([a, v]);
+    return ordered;
+  }, [items]);
+
+  const done = items.filter((i) => i.checked).length;
+  const total = items.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  function persist(next: ShoppingItem[]) {
+    update((prev) => ({
+      shoppingLists: prev.shoppingLists.map((s) =>
+        s.id === shoppingListId ? { ...s, items: next } : s,
+      ),
+    }));
+  }
+
+  function toggle(target: ShoppingItem) {
+    const next = items.map((it) =>
+      it.name === target.name && it.aisle === target.aisle && it.unit === target.unit
+        ? { ...it, checked: !it.checked }
+        : it,
+    );
+    persist(next);
+  }
+
+  function reset() {
+    persist(items.map((it) => ({ ...it, checked: false })));
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">
+          <ShoppingBasket size={12} strokeWidth={1.75} />
+          {done} / {total} bought · {pct}%
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setHideChecked((v) => !v)}
+            className={`font-mono text-[10px] uppercase tracking-[0.08em] px-2 py-1 border ${
+              hideChecked
+                ? "border-[color:var(--text-display)] text-[color:var(--text-display)]"
+                : "border-[color:var(--border-visible)] text-[color:var(--text-secondary)]"
+            }`}
+          >
+            {hideChecked ? "SHOW ALL" : "HIDE DONE"}
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            disabled={done === 0}
+            className="font-mono text-[10px] uppercase tracking-[0.08em] px-2 py-1 border border-[color:var(--border-visible)] text-[color:var(--text-secondary)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:opacity-30"
+          >
+            RESET
+          </button>
+        </div>
+      </div>
+
+      <div className="h-1 bg-[color:var(--border)]">
+        <div
+          className="h-full bg-[color:var(--accent)] transition-[width] duration-200"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <div className="space-y-4">
+        {grouped.map(([aisle, list]) => {
+          const visible = hideChecked ? list.filter((i) => !i.checked) : list;
+          if (visible.length === 0) return null;
+          return (
+            <div key={aisle}>
+              <div className="mono-label mb-1">{aisleLabel(aisle)}</div>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                {visible.map((it, i) => {
+                  const id = `${aisle}-${i}-${it.name}`;
+                  return (
+                    <li key={id}>
+                      <label
+                        htmlFor={id}
+                        className={`flex items-center gap-3 py-2 border-b border-[color:var(--border)] cursor-pointer select-none ${
+                          it.checked ? "opacity-50" : ""
+                        }`}
+                      >
+                        <span
+                          className={`inline-flex items-center justify-center w-5 h-5 border ${
+                            it.checked
+                              ? "bg-[color:var(--accent)] border-[color:var(--accent)] text-[color:var(--surface)]"
+                              : "border-[color:var(--border-visible)] text-transparent"
+                          }`}
+                        >
+                          <Check size={14} strokeWidth={2.5} />
+                        </span>
+                        <input
+                          id={id}
+                          type="checkbox"
+                          className="sr-only"
+                          checked={!!it.checked}
+                          onChange={() => toggle(it)}
+                        />
+                        <span
+                          className={`font-body text-sm flex-1 min-w-0 truncate ${
+                            it.checked
+                              ? "line-through text-[color:var(--text-secondary)]"
+                              : "text-[color:var(--text-display)]"
+                          }`}
+                        >
+                          {it.name}
+                        </span>
+                        {(it.qty != null || it.unit) && (
+                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-[color:var(--text-secondary)] tabular-nums shrink-0">
+                            {it.qty ?? ""} {it.unit ?? ""}
+                          </span>
+                        )}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+
+      {total > 0 && done === total && (
+        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--success)] border-t border-[color:var(--border)] pt-3">
+          <Sparkles size={12} strokeWidth={1.75} />
+          ALL BOUGHT
+        </div>
+      )}
+    </div>
+  );
+}

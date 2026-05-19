@@ -3,8 +3,18 @@
 import { useDemoStore } from "@/lib/demo/store";
 import { Card, CardLabel } from "@/components/ui/card";
 import { GeneratePlanForm } from "./generate-plan-form";
+import { HandMeasureLegend } from "@/components/food/hand-measure-legend";
+import { PlanWeek } from "@/components/food/plan-week";
+import { ShoppingChecklist } from "@/components/food/shopping-checklist";
 
-type MealItem = { name: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number };
+type MealItem = {
+  name: string;
+  portion?: string;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+};
 type DayPlan = {
   date: string;
   breakfast: MealItem[];
@@ -19,6 +29,24 @@ type PlanShape = {
   days: DayPlan[];
 };
 
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function rangeLabel(starts: string, ends: string): string {
+  const fmt = (s: string) => {
+    const [y, m, d] = s.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return dt
+      .toLocaleDateString("en-US", { day: "2-digit", month: "short" })
+      .toUpperCase();
+  };
+  return `${fmt(starts)} → ${fmt(ends)}`;
+}
+
 export default function MealPlanPage() {
   const { state } = useDemoStore();
 
@@ -30,12 +58,8 @@ export default function MealPlanPage() {
     : [];
 
   const plan = (latest?.plan ?? null) as PlanShape | null;
-  const items = ((list[0]?.items as Array<{
-    name: string;
-    qty?: number;
-    unit?: string;
-    aisle?: string;
-  }> | undefined) ?? []);
+  const shoppingRow = list[0];
+  const todayKey = ymdLocal(new Date());
 
   return (
     <div className="space-y-6">
@@ -51,59 +75,26 @@ export default function MealPlanPage() {
 
       {plan && (
         <>
-          <Card>
-            <div className="flex items-baseline justify-between mb-4">
-              <CardLabel>WEEK · {plan.starts_on} → {plan.ends_on}</CardLabel>
+          <div>
+            <div className="flex items-baseline justify-between mb-3">
+              <div className="mono-label">WEEK · {rangeLabel(plan.starts_on, plan.ends_on)}</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--text-disabled)]">
+                {plan.days.length} DAY{plan.days.length === 1 ? "" : "S"}
+              </div>
             </div>
-            <div className="space-y-4">
-              {plan.days.map((d) => (
-                <div key={d.date} className="border-t border-[color:var(--border)] pt-3">
-                  <div className="font-mono text-sm text-[color:var(--text-display)] mb-2">{d.date}</div>
-                  {(["breakfast", "lunch", "dinner", "snacks"] as const).map((m) => {
-                    const meals = d[m];
-                    if (!meals || meals.length === 0) return null;
-                    return (
-                      <div key={m} className="mb-2">
-                        <div className="mono-label mb-1">{m.toUpperCase()}</div>
-                        <ul className="space-y-0.5">
-                          {meals.map((it, i) => (
-                            <li key={i} className="flex justify-between text-sm">
-                              <span className="font-body text-[color:var(--text-primary)]">{it.name}</span>
-                              <span className="font-mono text-[11px] text-[color:var(--text-secondary)]">
-                                {Math.round(it.kcal)} kcal · P{Math.round(it.protein_g)}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                  {d.totals && (
-                    <div className="mono-label mt-2">
-                      TOTAL {Math.round(d.totals.kcal)} kcal · P {Math.round(d.totals.protein_g)}g · C {Math.round(d.totals.carbs_g)}g · F {Math.round(d.totals.fat_g)}g
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
+            <PlanWeek days={plan.days} todayKey={todayKey} />
+          </div>
 
-          <Card>
-            <CardLabel>SHOPPING LIST</CardLabel>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-2">
-              {items.map((it, i) => (
-                <li
-                  key={i}
-                  className="grid grid-cols-[1fr_auto] gap-2 py-2 border-b border-[color:var(--border)]"
-                >
-                  <span className="font-body text-sm">{it.name}</span>
-                  <span className="font-mono text-[11px] text-[color:var(--text-secondary)]">
-                    {it.qty ?? ""} {it.unit ?? ""} {it.aisle ? `· ${it.aisle}` : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <HandMeasureLegend />
+
+          {shoppingRow && (
+            <Card>
+              <CardLabel>SHOPPING LIST</CardLabel>
+              <div className="mt-3">
+                <ShoppingChecklist shoppingListId={shoppingRow.id} />
+              </div>
+            </Card>
+          )}
         </>
       )}
     </div>

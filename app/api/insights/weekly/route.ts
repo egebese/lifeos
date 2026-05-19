@@ -21,16 +21,22 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 function dayKey(d: Date) {
-  return d.toISOString().slice(0, 10);
+  // Local-time YYYY-MM-DD. toISOString() emits UTC and shifts the date for
+  // users east of UTC, which broke matching against the local-built days[] array.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
 
 export async function POST() {
   const { user } = await requireSession();
   const [p] = await db.select().from(profile).where(eq(profile.userId, user.id)).limit(1);
 
+  // Last 7 days inclusive of today: window = [today-6 .. today].
   const start = new Date();
   start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - 7);
+  start.setDate(start.getDate() - 6);
 
   const fe = await db
     .select()

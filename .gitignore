@@ -26,3 +26,8 @@ uploads/
 .vscode/
 .idea/
 .playwright-mcp/
+
+# Personal agent context (do not publish — contains owner-specific deployment notes)
+CLAUDE.md
+CLAUDE.local.md
+.claude/

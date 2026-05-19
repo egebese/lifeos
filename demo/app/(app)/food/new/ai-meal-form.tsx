@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mic, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { HistoryMatchHint } from "@/components/food/history-match-hint";
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -54,6 +55,7 @@ export function AiMealForm() {
             placeholder='e.g. "for breakfast: a lavash wrap with 1 boiled egg, half an avocado and yogurt-lemon sauce, plus an extra boiled egg, some greens, a matchbox of white cheese, 3 black olives"'
             className="w-full bg-transparent border-b border-[color:var(--border-visible)] py-2 font-body text-base text-[color:var(--text-display)] focus:outline-none focus:border-[color:var(--accent)] resize-none placeholder:text-[color:var(--text-disabled)]"
           />
+          <HistoryMatchHint text={text} mealHint={defaultMeal} />
         </div>
       </div>
 

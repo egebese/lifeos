@@ -13,6 +13,9 @@ export type FoodVision = z.infer<typeof FoodVisionSchema>;
 
 export const MealItemSchema = z.object({
   name: z.string(),
+  // Human-readable portion using hand-measure idioms ("1 avuç içi salmon (~150 g)",
+  // "1 yumruk pilav", "2 yemek kaşığı zeytinyağı") plus a grams/adet fallback.
+  portion: z.string().optional(),
   kcal: z.number().nonnegative(),
   protein_g: z.number().nonnegative(),
   carbs_g: z.number().nonnegative(),
@@ -54,6 +57,8 @@ export const MealPlanSchema = z.object({
       qty: z.number().nonnegative().optional(),
       unit: z.string().optional(),
       aisle: z.string().optional(),
+      // Toggled by the user as they shop; not produced by the model.
+      checked: z.boolean().optional(),
     }),
   ),
 });

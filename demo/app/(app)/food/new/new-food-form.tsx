@@ -6,6 +6,10 @@ import { useDemoStore, generateId, DEMO_USER_ID } from "@/lib/demo/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import {
+  FoodNameAutocomplete,
+  type FoodSuggestion,
+} from "@/components/food/name-autocomplete";
 
 export function NewFoodForm() {
   const router = useRouter();
@@ -64,9 +68,21 @@ export function NewFoodForm() {
             <option value="snack">snack</option>
           </Select>
         </div>
-        <div>
+        <div className="col-span-2">
           <div className="mono-label mb-1">NAME</div>
-          <Input value={name} onChange={(e) => setName(e.target.value)} required />
+          <FoodNameAutocomplete
+            value={name}
+            onChange={setName}
+            onPick={(s: FoodSuggestion) => {
+              setName(s.name);
+              if (s.kcal != null) setKcal(String(Math.round(s.kcal)));
+              if (s.proteinG != null) setP(String(Math.round(s.proteinG)));
+              if (s.carbsG != null) setC(String(Math.round(s.carbsG)));
+              if (s.fatG != null) setF(String(Math.round(s.fatG)));
+              if (s.meal) setMeal(s.meal);
+            }}
+            disabled={busy}
+          />
         </div>
         <div>
           <div className="mono-label mb-1">KCAL</div>

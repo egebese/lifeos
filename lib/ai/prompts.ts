@@ -42,8 +42,20 @@ export function weeklyPlanPrompt(p: PlanInput): Prompt {
   // UI is English-only — always respond with English meal names regardless of
   // p.locale (kept for API stability).
   void p.locale;
-  const system =
-    "You are a dietitian crafting weekly meal plans. Return ONLY a single valid JSON object — no prose, no markdown. Use English meal and ingredient names.";
+  const system = `You are a dietitian crafting weekly meal plans for a Turkish user. Return ONLY a single valid JSON object — no prose, no markdown. Use English meal and ingredient names, but write the per-item PORTION string in a Turkish hand-measure ("el ölçüsü") idiom plus a grams/adet fallback.
+
+Hand-measure cheatsheet (use these when describing portions):
+- Avuç içi (palm of hand): ~100-150 g of meat/fish/poultry
+- Yumruk (closed fist): ~1 cup / ~150-200 g cooked rice, pasta, beans, or fruit
+- Sıkılı yumruğun ön tarafı (front of fist): ~½ cup
+- Sıkılı yumruğun iç tarafı (inside of fist): ~1 full glass volume
+- Baş parmak ucu (thumb tip): ~½ tablespoon = ~7 g of oil/peanut butter/cheese
+- İşaret parmak ucu (index fingertip): ~1 teaspoon = ~5 g
+- 1 kibrit kutusu peynir (matchbox of cheese): ~30 g
+- 1 dilim ekmek (slice of bread): ~25-35 g
+- 1 lavaş: ~40-60 g flatbread
+- 1 orta boy yumurta: ~50 g
+- 1 avuç fındık/badem (handful of nuts): ~30 g`;
 
   const today = new Date().toISOString().slice(0, 10);
   const prompt = `Goal: ${p.goal} (~${p.targetKcal} kcal/day)
@@ -63,6 +75,14 @@ Recently eaten (avoid repeating heavily): ${
 Generate a ${p.daysCount}-day meal plan starting ${today}. Each day MUST be close to the kcal & macro targets.
 Use pantry items first; minimize new shopping items.
 
+Every meal item MUST include a "portion" string that uses Turkish hand-measure idioms PLUS a grams/adet fallback so the user can prepare it without a scale. Examples:
+  - "1 avuç içi (~150 g)"
+  - "1 yumruk pirinç (~180 g pişmiş)"
+  - "2 yemek kaşığı zeytinyağı (~25 g)"
+  - "1 baş parmak ucu fıstık ezmesi (~7 g)"
+  - "1 kibrit kutusu beyaz peynir (~30 g)"
+  - "2 orta boy yumurta (~100 g)"
+
 Return JSON exactly:
 {
   "starts_on": "YYYY-MM-DD",
@@ -70,7 +90,7 @@ Return JSON exactly:
   "days": [
     {
       "date": "YYYY-MM-DD",
-      "breakfast": [{ "name": "...", "kcal": N, "protein_g": N, "carbs_g": N, "fat_g": N, "ingredients": [{"name":"...","qty":N,"unit":"g|ml|adet"}] }],
+      "breakfast": [{ "name": "...", "portion": "Turkish hand-measure idiom + (~g)", "kcal": N, "protein_g": N, "carbs_g": N, "fat_g": N, "ingredients": [{"name":"...","qty":N,"unit":"g|ml|adet"}] }],
       "lunch": [...],
       "dinner": [...],
       "snacks": [...],
