@@ -16,10 +16,13 @@ export async function GET(req: NextRequest) {
   }
   jar.delete("lt_whoop_state");
 
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? new URL(req.url).origin;
+
   try {
     const tok = await exchangeCode(code);
     await saveTokens(ctx.user.id, tok);
-    return NextResponse.redirect(new URL("/whoop?connected=1", req.url));
+    return NextResponse.redirect(`${origin}/whoop?connected=1`);
   } catch (e) {
     return NextResponse.json({ error: "exchange_failed", detail: String(e) }, { status: 500 });
   }
