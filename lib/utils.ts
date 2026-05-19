@@ -44,13 +44,17 @@ export function resolveDisplayName(args: {
 }
 
 export function greetingFor(
-  _locale: "tr" | "en",
+  locale: "tr" | "en",
   name: string,
   date = new Date(),
 ): string {
-  // UI copy is English-only — see app/layout.tsx (lang="en"). The locale arg
-  // is kept for API stability so callers don't need to change.
   const hour = date.getHours();
+  if (locale === "tr") {
+    if (hour < 6) return `İyi geceler, ${name}`;
+    if (hour < 12) return `Günaydın, ${name}`;
+    if (hour < 18) return `Merhaba, ${name}`;
+    return `İyi akşamlar, ${name}`;
+  }
   if (hour < 6) return `Good night, ${name}`;
   if (hour < 12) return `Good morning, ${name}`;
   if (hour < 18) return `Hello, ${name}`;

@@ -9,6 +9,8 @@ import {
   Soup,
   UtensilsCrossed,
 } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/client";
+import type { DictKey } from "@/lib/i18n/dict";
 
 type MealItem = {
   name: string;
@@ -33,37 +35,35 @@ type Props = {
   todayKey: string; // YYYY-MM-DD local
 };
 
-const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-const DAY_LONG = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
-function parts(ymd: string): { dayName: string; dayLong: string; dom: string; mon: string } {
+function parts(
+  ymd: string,
+  bcp47: string,
+): { dayName: string; dayLong: string; dom: string; mon: string } {
   const [y, m, d] = ymd.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  const dayIdx = dt.getDay();
   return {
-    dayName: DAY_NAMES[dayIdx],
-    dayLong: DAY_LONG[dayIdx],
+    dayName: dt.toLocaleDateString(bcp47, { weekday: "short" }).toUpperCase(),
+    dayLong: dt.toLocaleDateString(bcp47, { weekday: "long" }),
     dom: String(d).padStart(2, "0"),
-    mon: dt.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
+    mon: dt.toLocaleDateString(bcp47, { month: "short" }).toUpperCase(),
   };
 }
 
-const MEAL_META = [
-  { key: "breakfast" as const, label: "BREAKFAST", Icon: Coffee },
-  { key: "lunch" as const, label: "LUNCH", Icon: UtensilsCrossed },
-  { key: "dinner" as const, label: "DINNER", Icon: Soup },
-  { key: "snacks" as const, label: "SNACKS", Icon: Cookie },
+const MEAL_META: Array<{
+  key: "breakfast" | "lunch" | "dinner" | "snacks";
+  labelKey: DictKey;
+  Icon: typeof Coffee;
+}> = [
+  { key: "breakfast", labelKey: "meal.breakfast", Icon: Coffee },
+  { key: "lunch", labelKey: "meal.lunch", Icon: UtensilsCrossed },
+  { key: "dinner", labelKey: "meal.dinner", Icon: Soup },
+  { key: "snacks", labelKey: "meal.snacks", Icon: Cookie },
 ];
 
 export function PlanWeek({ days, todayKey }: Props) {
+  const t = useT();
+  const locale = useLocale();
+  const bcp47 = locale === "tr" ? "tr-TR" : "en-US";
   // Today expanded by default; if today isn't in the plan window, expand first day.
   const initialOpen =
     days.find((d) => d.date === todayKey)?.date ?? days[0]?.date ?? null;
@@ -74,7 +74,7 @@ export function PlanWeek({ days, todayKey }: Props) {
       {days.map((d) => {
         const isToday = d.date === todayKey;
         const isOpen = openKey === d.date;
-        const p = parts(d.date);
+        const p = parts(d.date, bcp47);
         return (
           <div
             key={d.date}
@@ -109,7 +109,7 @@ export function PlanWeek({ days, todayKey }: Props) {
                   {p.dayLong}
                   {isToday && (
                     <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[color:var(--accent)] align-middle">
-                      · TODAY
+                      · {t("common.today")}
                     </span>
                   )}
                 </div>
@@ -132,14 +132,14 @@ export function PlanWeek({ days, todayKey }: Props) {
 
             {isOpen && (
               <div className="border-t border-[color:var(--border)] px-3 py-3 space-y-4">
-                {MEAL_META.map(({ key, label, Icon }) => {
+                {MEAL_META.map(({ key, labelKey, Icon }) => {
                   const meals = d[key];
                   if (!meals || meals.length === 0) return null;
                   return (
                     <div key={key}>
                       <div className="flex items-center gap-1.5 mono-label mb-2">
                         <Icon size={11} strokeWidth={1.75} />
-                        {label}
+                        {t(labelKey)}
                       </div>
                       <ul className="space-y-2">
                         {meals.map((it, i) => (

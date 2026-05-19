@@ -6,6 +6,7 @@ import { Mic, Sparkles, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { HistoryMatchHint } from "@/components/food/history-match-hint";
+import { useT } from "@/lib/i18n/client";
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -30,6 +31,7 @@ const MEAL_OPTIONS: Meal[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export function AiMealForm() {
   const router = useRouter();
+  const t = useT();
   const [defaultMeal, setDefaultMeal] = useState<Meal>("breakfast");
   const [text, setText] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -223,25 +225,25 @@ export function AiMealForm() {
           strokeWidth={1.5}
           className="text-[color:var(--accent)]"
         />
-        <div className="mono-label">AI · AUTOLOG</div>
+        <div className="mono-label">{t("food.aiAutolog")}</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
         <div>
-          <div className="mono-label mb-1">DEFAULT MEAL</div>
+          <div className="mono-label mb-1">{t("food.defaultMeal")}</div>
           <Select
             value={defaultMeal}
             onChange={(e) => setDefaultMeal(e.target.value as Meal)}
           >
             {MEAL_OPTIONS.map((m) => (
               <option key={m} value={m}>
-                {m}
+                {t(`meal.${m}Lower` as const)}
               </option>
             ))}
           </Select>
         </div>
         <div>
-          <div className="mono-label mb-1">DESCRIBE</div>
+          <div className="mono-label mb-1">{t("food.describe")}</div>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -262,7 +264,7 @@ export function AiMealForm() {
             className="btn btn--outline btn--sm"
           >
             <Mic size={14} strokeWidth={1.5} className="mr-2" />
-            {transcribing ? "TRANSCRIBING…" : "RECORD VOICE"}
+            {transcribing ? t("food.transcribing") : t("food.recordVoice")}
           </button>
         ) : (
           <button
@@ -271,7 +273,7 @@ export function AiMealForm() {
             className="btn btn--danger btn--sm"
           >
             <Square size={12} strokeWidth={2} className="mr-2 fill-current" />
-            STOP
+            {t("common.stop")}
           </button>
         )}
         <Button
@@ -280,7 +282,7 @@ export function AiMealForm() {
           onClick={parse}
           disabled={parsing || saving || recording || transcribing || text.trim().length < 2}
         >
-          {parsing ? "PARSING…" : "PARSE WITH AI →"}
+          {parsing ? t("food.parsing") : t("food.parseWithAi")}
         </Button>
         {status && !error && (
           <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">

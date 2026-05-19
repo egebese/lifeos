@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sparkles, History } from "lucide-react";
 import { useDemoStore, generateId, DEMO_USER_ID } from "@/lib/demo/store";
 import type { FoodSuggestion } from "./name-autocomplete";
+import { useT } from "@/lib/i18n/client";
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -23,6 +24,7 @@ function looksLikeSingleItem(t: string): boolean {
 
 export function HistoryMatchHint({ text, mealHint }: { text: string; mealHint: Meal }) {
   const router = useRouter();
+  const t = useT();
   const { state, update } = useDemoStore();
   const [logging, setLogging] = useState(false);
 
@@ -98,7 +100,7 @@ export function HistoryMatchHint({ text, mealHint }: { text: string; mealHint: M
     <div className="border border-[color:var(--accent)] bg-[color:var(--surface)] p-3 space-y-2">
       <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--accent)]">
         <Sparkles size={11} strokeWidth={1.75} />
-        FROM YOUR HISTORY · SKIP AI
+        {t("food.fromHistorySkipAi")}
       </div>
       <ul className="space-y-1">
         {items.map((s) => (
@@ -124,7 +126,7 @@ export function HistoryMatchHint({ text, mealHint }: { text: string; mealHint: M
               disabled={logging}
               className="font-mono text-[10px] uppercase tracking-[0.08em] px-2 py-1 border border-[color:var(--accent)] text-[color:var(--accent)] hover:bg-[color:var(--accent)] hover:text-[color:var(--surface)] disabled:opacity-50"
             >
-              {logging ? "…" : "LOG →"}
+              {logging ? "…" : `${t("common.log")} →`}
             </button>
           </li>
         ))}

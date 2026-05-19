@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { History, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { FoodSuggestion } from "@/app/api/food/suggest/route";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   value: string;
@@ -29,6 +30,7 @@ function norm(s: string): string {
 }
 
 export function FoodNameAutocomplete({ value, onChange, onPick, disabled }: Props) {
+  const t = useT();
   const [items, setItems] = useState<FoodSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [exactMatch, setExactMatch] = useState<FoodSuggestion | null>(null);
@@ -99,7 +101,7 @@ export function FoodNameAutocomplete({ value, onChange, onPick, disabled }: Prop
           className="mt-1 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] px-2 py-1 border border-[color:var(--accent)] text-[color:var(--accent)] hover:bg-[color:var(--accent)] hover:text-[color:var(--surface)]"
         >
           <Sparkles size={10} strokeWidth={1.75} />
-          MATCH · {exactMatch.kcal ?? "?"} KCAL · USE →
+          {t("food.matchKcalUse", { kcal: exactMatch.kcal ?? "?" })}
         </button>
       )}
 
@@ -107,7 +109,7 @@ export function FoodNameAutocomplete({ value, onChange, onPick, disabled }: Prop
         <div className="absolute z-20 left-0 right-0 mt-1 bg-[color:var(--surface)] border border-[color:var(--border-visible)] shadow-lg max-h-80 overflow-y-auto">
           <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)] px-3 py-2 border-b border-[color:var(--border)] flex items-center gap-1.5">
             <History size={10} strokeWidth={1.75} />
-            FROM HISTORY · {items.length}
+            {t("food.fromHistory")} · {items.length}
           </div>
           {items.map((s) => (
             <button

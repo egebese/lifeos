@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Check, ShoppingBasket, Sparkles } from "lucide-react";
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
+import type { DictKey } from "@/lib/i18n/dict";
 
 export type ShoppingItem = {
   name: string;
@@ -18,14 +20,24 @@ type Props = {
 
 const AISLE_ORDER = ["produce", "meat", "dairy", "pantry", "frozen", "other"];
 
-function aisleLabel(a?: string): string {
-  if (!a) return "OTHER";
-  return a.toUpperCase();
-}
+const AISLE_KEYS: Record<string, DictKey> = {
+  produce: "plan.aisle.produce",
+  meat: "plan.aisle.meat",
+  dairy: "plan.aisle.dairy",
+  pantry: "plan.aisle.pantry",
+  frozen: "plan.aisle.frozen",
+  other: "plan.aisle.other",
+};
 
 export function ShoppingChecklist({ shoppingListId }: Props) {
+  const t = useT();
   const { state, update } = useDemoStore();
   const [hideChecked, setHideChecked] = useState(false);
+
+  function aisleLabel(a?: string): string {
+    const key = AISLE_KEYS[(a ?? "other").toLowerCase()];
+    return key ? t(key) : (a ?? "OTHER").toUpperCase();
+  }
 
   const items = useMemo<ShoppingItem[]>(() => {
     const row = state.shoppingLists.find((s) => s.id === shoppingListId);
@@ -79,7 +91,7 @@ export function ShoppingChecklist({ shoppingListId }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">
           <ShoppingBasket size={12} strokeWidth={1.75} />
-          {done} / {total} bought · {pct}%
+          {t("plan.bought", { done, total, pct })}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -91,7 +103,7 @@ export function ShoppingChecklist({ shoppingListId }: Props) {
                 : "border-[color:var(--border-visible)] text-[color:var(--text-secondary)]"
             }`}
           >
-            {hideChecked ? "SHOW ALL" : "HIDE DONE"}
+            {hideChecked ? t("plan.showAll") : t("plan.hideDone")}
           </button>
           <button
             type="button"
@@ -99,7 +111,7 @@ export function ShoppingChecklist({ shoppingListId }: Props) {
             disabled={done === 0}
             className="font-mono text-[10px] uppercase tracking-[0.08em] px-2 py-1 border border-[color:var(--border-visible)] text-[color:var(--text-secondary)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:opacity-30"
           >
-            RESET
+            {t("common.reset")}
           </button>
         </div>
       </div>
@@ -172,7 +184,7 @@ export function ShoppingChecklist({ shoppingListId }: Props) {
       {total > 0 && done === total && (
         <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--success)] border-t border-[color:var(--border)] pt-3">
           <Sparkles size={12} strokeWidth={1.75} />
-          ALL BOUGHT
+          {t("plan.allBought")}
         </div>
       )}
     </div>

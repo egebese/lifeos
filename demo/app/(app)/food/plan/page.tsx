@@ -6,6 +6,7 @@ import { GeneratePlanForm } from "./generate-plan-form";
 import { HandMeasureLegend } from "@/components/food/hand-measure-legend";
 import { PlanWeek } from "@/components/food/plan-week";
 import { ShoppingChecklist } from "@/components/food/shopping-checklist";
+import { useT, useLocale } from "@/lib/i18n/client";
 
 type MealItem = {
   name: string;
@@ -36,18 +37,21 @@ function ymdLocal(d: Date): string {
   return `${y}-${m}-${dd}`;
 }
 
-function rangeLabel(starts: string, ends: string): string {
+function rangeLabel(starts: string, ends: string, bcp47: string): string {
   const fmt = (s: string) => {
     const [y, m, d] = s.split("-").map(Number);
     const dt = new Date(y, m - 1, d);
     return dt
-      .toLocaleDateString("en-US", { day: "2-digit", month: "short" })
+      .toLocaleDateString(bcp47, { day: "2-digit", month: "short" })
       .toUpperCase();
   };
   return `${fmt(starts)} → ${fmt(ends)}`;
 }
 
 export default function MealPlanPage() {
+  const t = useT();
+  const locale = useLocale();
+  const bcp47 = locale === "tr" ? "tr-TR" : "en-US";
   const { state } = useDemoStore();
 
   const latest = [...state.mealPlans].sort(
@@ -64,12 +68,12 @@ export default function MealPlanPage() {
   return (
     <div className="space-y-6">
       <header>
-        <div className="mono-label">AI · MEAL PLANNER</div>
-        <h1 className="font-display text-4xl mt-1">diet plan</h1>
+        <div className="mono-label">{t("plan.aiMealPlanner")}</div>
+        <h1 className="font-display text-4xl mt-1">{t("plan.title")}</h1>
       </header>
 
       <Card>
-        <CardLabel>GENERATE</CardLabel>
+        <CardLabel>{t("plan.generate")}</CardLabel>
         <GeneratePlanForm />
       </Card>
 
@@ -77,9 +81,13 @@ export default function MealPlanPage() {
         <>
           <div>
             <div className="flex items-baseline justify-between mb-3">
-              <div className="mono-label">WEEK · {rangeLabel(plan.starts_on, plan.ends_on)}</div>
+              <div className="mono-label">
+                {t("plan.week")} · {rangeLabel(plan.starts_on, plan.ends_on, bcp47)}
+              </div>
               <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--text-disabled)]">
-                {plan.days.length} DAY{plan.days.length === 1 ? "" : "S"}
+                {t(plan.days.length === 1 ? "plan.daysCountOne" : "plan.daysCountMany", {
+                  n: plan.days.length,
+                })}
               </div>
             </div>
             <PlanWeek days={plan.days} todayKey={todayKey} />
@@ -89,7 +97,7 @@ export default function MealPlanPage() {
 
           {shoppingRow && (
             <Card>
-              <CardLabel>SHOPPING LIST</CardLabel>
+              <CardLabel>{t("plan.shoppingList")}</CardLabel>
               <div className="mt-3">
                 <ShoppingChecklist shoppingListId={shoppingRow.id} />
               </div>

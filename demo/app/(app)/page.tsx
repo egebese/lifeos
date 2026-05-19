@@ -21,6 +21,7 @@ import { WeightProjection } from "@/components/dashboard/weight-projection";
 import { DayNav } from "@/components/dashboard/day-nav";
 import { bmi, bmr, macroSplit, recommendedKcal, tdee } from "@/lib/nutrition";
 import { formatKg, greetingFor, resolveDisplayName } from "@/lib/utils";
+import { useT, useLocale } from "@/lib/i18n/client";
 
 function formatDayShort(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -36,6 +37,8 @@ function ymdLocal(d: Date): string {
 }
 
 export default function Dashboard() {
+  const t = useT();
+  const locale = useLocale();
   const { state } = useDemoStore();
   const sp = useSearchParams();
   const dayParam = sp.get("day");
@@ -109,7 +112,8 @@ export default function Dashboard() {
     (a, b) => +new Date(b.startedAt) - +new Date(a.startedAt),
   )[0];
 
-  const headerDate = dayStart.toLocaleDateString("en-US", {
+  const bcp47 = locale === "tr" ? "tr-TR" : "en-US";
+  const headerDate = dayStart.toLocaleDateString(bcp47, {
     weekday: "long",
     day: "2-digit",
     month: "short",
@@ -119,8 +123,12 @@ export default function Dashboard() {
     displayName: prof?.displayName,
     email: "demo@lifeos.local",
   });
-  const greeting = greetingFor("en", name);
-  const kcalLabel = isToday ? "KCAL TODAY" : `KCAL · ${formatDayShort(selectedKey)}`;
+  const greeting = greetingFor(locale, name);
+  const kcalLabel = isToday
+    ? t("dash.kcalToday")
+    : `${t("dash.kcalOn")} ${formatDayShort(selectedKey)}`;
+  const goalLabelKey: "goal.cut" | "goal.maintain" | "goal.bulk" =
+    goal === "cut" ? "goal.cut" : goal === "bulk" ? "goal.bulk" : "goal.maintain";
 
   return (
     <div className="space-y-8">
@@ -128,7 +136,7 @@ export default function Dashboard() {
         <div className="mono-label">
           {headerDate.toUpperCase()}
           {!isToday && (
-            <span className="ml-2 text-[color:var(--accent)]">· VIEWING</span>
+            <span className="ml-2 text-[color:var(--accent)]">{t("dash.viewing")}</span>
           )}
         </div>
         <h1 className="font-display text-4xl md:text-5xl mt-1">{greeting}</h1>
@@ -139,14 +147,14 @@ export default function Dashboard() {
           bare
           className="flex-1 min-w-0"
           items={[
-            { label: "BMI", value: computedBmi ? computedBmi.toFixed(1) : "—" },
+            { label: t("dash.bmi"), value: computedBmi ? computedBmi.toFixed(1) : "—" },
             {
-              label: "TDEE · EST",
+              label: t("dash.tdeeEst"),
               value: computedTdee ? `${Math.round(computedTdee)}` : "—",
             },
-            { label: "TARGET", value: kcalTarget ? `${kcalTarget}` : "—" },
-            { label: "WEIGHT", value: weightKg ? `${formatKg(weightKg)}kg` : "—" },
-            { label: "GOAL", value: goal.toUpperCase() },
+            { label: t("dash.target"), value: kcalTarget ? `${kcalTarget}` : "—" },
+            { label: t("dash.weight"), value: weightKg ? `${formatKg(weightKg)}kg` : "—" },
+            { label: t("dash.goal"), value: t(goalLabelKey) },
           ]}
         />
         <DayNav selected={selectedKey} today={todayKey} />
@@ -184,7 +192,7 @@ export default function Dashboard() {
         {whoopConnected && (
           <Card>
             <MonoStat
-              label="STRAIN"
+              label={t("dash.strain")}
               value={strain?.score ? Number(strain.score).toFixed(1) : "—"}
               icon={<Zap size={12} strokeWidth={1.75} />}
             />
@@ -203,14 +211,14 @@ export default function Dashboard() {
         {whoopConnected && (
           <Card>
             <MonoStat
-              label="SLEEP"
+              label={t("dash.sleep")}
               value={sleepHours ? sleepHours.toFixed(1) : "—"}
               unit="h"
               icon={<Moon size={12} strokeWidth={1.75} />}
             />
             {sleep?.performancePct != null && (
               <div className="font-mono text-[10px] text-[color:var(--text-secondary)] uppercase tracking-[0.08em] mt-2">
-                PERFORMANCE {Number(sleep.performancePct).toFixed(0)}%
+                {t("dash.sleepPerformance")} {Number(sleep.performancePct).toFixed(0)}%
               </div>
             )}
           </Card>
@@ -218,7 +226,7 @@ export default function Dashboard() {
 
         <Card>
           <MonoStat
-            label="WEIGHT"
+            label={t("dash.weight")}
             value={weightKg ? formatKg(weightKg) : "—"}
             unit="kg"
             icon={<Scale size={12} strokeWidth={1.75} />}
@@ -237,7 +245,9 @@ export default function Dashboard() {
           <Card className="flex flex-col items-center gap-3">
             <CardLabel className="flex items-center gap-1.5 self-start">
               <HeartPulse size={12} strokeWidth={1.75} />
-              RECOVERY · {isToday ? "TODAY" : formatDayShort(selectedKey)}
+              {isToday
+                ? t("dash.recoveryToday")
+                : `${t("dash.recoveryOn")} ${formatDayShort(selectedKey)}`}
             </CardLabel>
             <Gauge
               value={recovery?.score ?? 0}
@@ -249,13 +259,13 @@ export default function Dashboard() {
             />
             <div className="grid grid-cols-2 gap-3 w-full pt-2 border-t border-[color:var(--border)] mt-auto">
               <MonoStat
-                label="HRV"
+                label={t("dash.hrv")}
                 value={recovery?.hrvMs ? Number(recovery.hrvMs).toFixed(0) : "—"}
                 unit="ms"
                 icon={<Activity size={12} strokeWidth={1.75} />}
               />
               <MonoStat
-                label="RHR"
+                label={t("dash.rhr")}
                 value={recovery?.rhr ?? "—"}
                 unit="bpm"
                 icon={<HeartPulse size={12} strokeWidth={1.75} />}
@@ -281,7 +291,7 @@ export default function Dashboard() {
           href="/whoop"
           className="block border border-dashed border-[color:var(--border-visible)] px-4 py-3 text-center font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--text-secondary)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
         >
-          CONNECT WHOOP TO UNLOCK RECOVERY · STRAIN · SLEEP · MEASURED TDEE →
+          {t("dash.connectWhoop")}
         </Link>
       )}
 
@@ -299,30 +309,30 @@ export default function Dashboard() {
 
       <section>
         <Card>
-          <CardLabel>LAST WORKOUT</CardLabel>
+          <CardLabel>{t("dash.lastWorkout")}</CardLabel>
           {lastWorkout ? (
             <div>
               <div className="font-display text-2xl">
-                {new Date(lastWorkout.startedAt).toLocaleDateString("en-US", {
+                {new Date(lastWorkout.startedAt).toLocaleDateString(bcp47, {
                   day: "2-digit",
                   month: "short",
                 })}
               </div>
               <div className="mono-label mt-1">
-                {lastWorkout.endedAt ? "COMPLETED" : "IN PROGRESS"}
+                {lastWorkout.endedAt ? t("dash.completed") : t("dash.inProgress")}
               </div>
               <Link
                 href={`/workouts/${lastWorkout.id}`}
                 className="font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--accent)] mt-3 inline-block"
               >
-                OPEN →
+                {t("common.open")} →
               </Link>
             </div>
           ) : (
             <div className="font-mono text-sm text-[color:var(--text-secondary)]">
-              no workouts yet —{" "}
+              {t("dash.noWorkoutYet")}{" "}
               <Link href="/workouts/new" className="text-[color:var(--accent)]">
-                start one
+                {t("dash.startOne")}
               </Link>
             </div>
           )}
@@ -331,10 +341,10 @@ export default function Dashboard() {
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {[
-          { href: "/workouts/new", label: "START WORKOUT" },
-          { href: "/food/new", label: "LOG MEAL" },
-          { href: "/food/plan", label: "GENERATE PLAN" },
-          { href: "/analysis", label: "ANALYSIS" },
+          { href: "/workouts/new", label: t("dash.startWorkout") },
+          { href: "/food/new", label: t("dash.logMeal") },
+          { href: "/food/plan", label: t("dash.generatePlan") },
+          { href: "/analysis", label: t("nav.analysis").toUpperCase() },
         ].map((a) => (
           <Link
             key={a.href}

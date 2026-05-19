@@ -31,6 +31,7 @@ import { DayNav } from "@/components/dashboard/day-nav";
 import { bmi, bmr, macroSplit, recommendedKcal, tdee } from "@/lib/nutrition";
 import { getMeasuredTdee } from "@/lib/whoop/tdee";
 import { formatKg, greetingFor, resolveDisplayName } from "@/lib/utils";
+import { getLocale, tFor } from "@/lib/i18n/server";
 
 function formatDayShort(dateStr: string): string {
   // dateStr is "YYYY-MM-DD" from a Postgres date column
@@ -55,6 +56,8 @@ export default async function Dashboard({
 }) {
   const { user } = await requireSession();
   const sp = await searchParams;
+  const locale = await getLocale();
+  const t = tFor(locale);
   const todayKey = ymdLocal(new Date());
   const selectedKey =
     sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : todayKey;
@@ -156,15 +159,18 @@ export default async function Dashboard({
     .orderBy(desc(workouts.startedAt))
     .limit(1);
 
-  const headerDate = dayStart.toLocaleDateString("en-US", {
-    weekday: "long",
-    day: "2-digit",
-    month: "short",
-  });
+  const headerDate = dayStart.toLocaleDateString(
+    locale === "tr" ? "tr-TR" : "en-US",
+    { weekday: "long", day: "2-digit", month: "short" },
+  );
 
   const name = resolveDisplayName({ displayName: prof?.displayName, email: user.email });
-  const greeting = greetingFor("en", name);
-  const kcalLabel = isToday ? "KCAL TODAY" : `KCAL · ${formatDayShort(selectedKey)}`;
+  const greeting = greetingFor(locale, name);
+  const kcalLabel = isToday
+    ? t("dash.kcalToday")
+    : `${t("dash.kcalOn")} ${formatDayShort(selectedKey)}`;
+  const goalLabelKey: "goal.cut" | "goal.maintain" | "goal.bulk" =
+    goal === "cut" ? "goal.cut" : goal === "bulk" ? "goal.bulk" : "goal.maintain";
 
   return (
     <div className="space-y-8">
@@ -172,7 +178,7 @@ export default async function Dashboard({
         <div className="mono-label">
           {headerDate.toUpperCase()}
           {!isToday && (
-            <span className="ml-2 text-[color:var(--accent)]">· VIEWING</span>
+            <span className="ml-2 text-[color:var(--accent)]">{t("dash.viewing")}</span>
           )}
         </div>
         <h1 className="font-display text-4xl md:text-5xl mt-1">{greeting}</h1>
@@ -183,14 +189,14 @@ export default async function Dashboard({
           bare
           className="flex-1 min-w-0"
           items={[
-            { label: "BMI", value: computedBmi ? computedBmi.toFixed(1) : "—" },
+            { label: t("dash.bmi"), value: computedBmi ? computedBmi.toFixed(1) : "—" },
             {
-              label: tdeeSource === "whoop" ? "TDEE · WHOOP" : "TDEE · EST",
+              label: tdeeSource === "whoop" ? t("dash.tdeeWhoop") : t("dash.tdeeEst"),
               value: computedTdee ? `${Math.round(computedTdee)}` : "—",
             },
-            { label: "TARGET", value: kcalTarget ? `${kcalTarget}` : "—" },
-            { label: "WEIGHT", value: weightKg ? `${formatKg(weightKg)}kg` : "—" },
-            { label: "GOAL", value: goal.toUpperCase() },
+            { label: t("dash.target"), value: kcalTarget ? `${kcalTarget}` : "—" },
+            { label: t("dash.weight"), value: weightKg ? `${formatKg(weightKg)}kg` : "—" },
+            { label: t("dash.goal"), value: t(goalLabelKey) },
           ]}
         />
         <DayNav selected={selectedKey} today={todayKey} />
@@ -228,7 +234,7 @@ export default async function Dashboard({
         {whoopConnected && (
           <Card>
             <MonoStat
-              label="STRAIN"
+              label={t("dash.strain")}
               value={strain?.score ? Number(strain.score).toFixed(1) : "—"}
               icon={<Zap size={12} strokeWidth={1.75} />}
             />
@@ -247,14 +253,14 @@ export default async function Dashboard({
         {whoopConnected && (
           <Card>
             <MonoStat
-              label="SLEEP"
+              label={t("dash.sleep")}
               value={sleepHours ? sleepHours.toFixed(1) : "—"}
               unit="h"
               icon={<Moon size={12} strokeWidth={1.75} />}
             />
             {sleep?.performancePct != null && (
               <div className="font-mono text-[10px] text-[color:var(--text-secondary)] uppercase tracking-[0.08em] mt-2">
-                PERFORMANCE {Number(sleep.performancePct).toFixed(0)}%
+                {t("dash.sleepPerformance")} {Number(sleep.performancePct).toFixed(0)}%
               </div>
             )}
           </Card>
@@ -262,7 +268,7 @@ export default async function Dashboard({
 
         <Card>
           <MonoStat
-            label="WEIGHT"
+            label={t("dash.weight")}
             value={weightKg ? formatKg(weightKg) : "—"}
             unit="kg"
             icon={<Scale size={12} strokeWidth={1.75} />}
@@ -281,7 +287,9 @@ export default async function Dashboard({
           <Card className="flex flex-col items-center gap-3">
             <CardLabel className="flex items-center gap-1.5 self-start">
               <HeartPulse size={12} strokeWidth={1.75} />
-              RECOVERY · {isToday ? "TODAY" : formatDayShort(selectedKey)}
+              {isToday
+                ? t("dash.recoveryToday")
+                : `${t("dash.recoveryOn")} ${formatDayShort(selectedKey)}`}
             </CardLabel>
             <Gauge
               value={recovery?.score ?? 0}
@@ -293,13 +301,13 @@ export default async function Dashboard({
             />
             <div className="grid grid-cols-2 gap-3 w-full pt-2 border-t border-[color:var(--border)] mt-auto">
               <MonoStat
-                label="HRV"
+                label={t("dash.hrv")}
                 value={recovery?.hrvMs ? Number(recovery.hrvMs).toFixed(0) : "—"}
                 unit="ms"
                 icon={<Activity size={12} strokeWidth={1.75} />}
               />
               <MonoStat
-                label="RHR"
+                label={t("dash.rhr")}
                 value={recovery?.rhr ?? "—"}
                 unit="bpm"
                 icon={<HeartPulse size={12} strokeWidth={1.75} />}
@@ -325,7 +333,7 @@ export default async function Dashboard({
           href="/whoop"
           className="block border border-dashed border-[color:var(--border-visible)] px-4 py-3 text-center font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--text-secondary)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
         >
-          CONNECT WHOOP TO UNLOCK RECOVERY · STRAIN · SLEEP · MEASURED TDEE →
+          {t("dash.connectWhoop")}
         </Link>
       )}
 
@@ -343,30 +351,30 @@ export default async function Dashboard({
 
       <section>
         <Card>
-          <CardLabel>LAST WORKOUT</CardLabel>
+          <CardLabel>{t("dash.lastWorkout")}</CardLabel>
           {lastWorkout ? (
             <div>
               <div className="font-display text-2xl">
-                {new Date(lastWorkout.startedAt).toLocaleDateString("en-US", {
-                  day: "2-digit",
-                  month: "short",
-                })}
+                {new Date(lastWorkout.startedAt).toLocaleDateString(
+                  locale === "tr" ? "tr-TR" : "en-US",
+                  { day: "2-digit", month: "short" },
+                )}
               </div>
               <div className="mono-label mt-1">
-                {lastWorkout.endedAt ? "COMPLETED" : "IN PROGRESS"}
+                {lastWorkout.endedAt ? t("dash.completed") : t("dash.inProgress")}
               </div>
               <Link
                 href={`/workouts/${lastWorkout.id}`}
                 className="font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--accent)] mt-3 inline-block"
               >
-                OPEN →
+                {t("common.open")} →
               </Link>
             </div>
           ) : (
             <div className="font-mono text-sm text-[color:var(--text-secondary)]">
-              no workouts yet —{" "}
+              {t("dash.noWorkoutYet")}{" "}
               <Link href="/workouts/new" className="text-[color:var(--accent)]">
-                start one
+                {t("dash.startOne")}
               </Link>
             </div>
           )}
@@ -375,10 +383,10 @@ export default async function Dashboard({
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {[
-          { href: "/workouts/new", label: "START WORKOUT" },
-          { href: "/food/new", label: "LOG MEAL" },
-          { href: "/food/plan", label: "GENERATE PLAN" },
-          { href: "/analysis", label: "ANALYSIS" },
+          { href: "/workouts/new", label: t("dash.startWorkout") },
+          { href: "/food/new", label: t("dash.logMeal") },
+          { href: "/food/plan", label: t("dash.generatePlan") },
+          { href: "/analysis", label: t("nav.analysis").toUpperCase() },
         ].map((a) => (
           <Link
             key={a.href}

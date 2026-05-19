@@ -6,6 +6,7 @@ import { Card, CardLabel } from "@/components/ui/card";
 import { LineChart } from "@/components/charts/line-chart";
 import { projectWeight, weeksToTarget } from "@/lib/nutrition/projection";
 import type { Activity, Sex } from "@/lib/nutrition";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   sex: Sex;
@@ -25,6 +26,7 @@ const HORIZONS = [
 
 export function WeightProjection(props: Props) {
   const [weeks, setWeeks] = useState(8);
+  const t = useT();
 
   const ok =
     props.heightCm > 0 &&
@@ -59,10 +61,10 @@ export function WeightProjection(props: Props) {
       <Card>
         <CardLabel className="flex items-center gap-1.5">
           <TrendingDown size={12} strokeWidth={1.75} />
-          WEIGHT PROJECTION
+          {t("proj.title")}
         </CardLabel>
         <div className="font-mono text-sm text-[color:var(--text-secondary)]">
-          Set profile (sex, height, age, weight) + a daily kcal target to see the projection.
+          {t("proj.needProfile")}
         </div>
       </Card>
     );
@@ -72,7 +74,7 @@ export function WeightProjection(props: Props) {
   const delta = end.weightKg - points[0].weightKg;
   const direction = delta < 0 ? "down" : delta > 0 ? "up" : "flat";
   const chartData = points.map((p) => ({
-    label: p.week === 0 ? "NOW" : `W${p.week}`,
+    label: p.week === 0 ? t("proj.now") : `W${p.week}`,
     weight: p.weightKg,
   }));
 
@@ -90,7 +92,7 @@ export function WeightProjection(props: Props) {
           ) : (
             <TrendingUp size={12} strokeWidth={1.75} />
           )}
-          WEIGHT PROJECTION · {props.dailyKcalIntake} KCAL/DAY
+          {t("proj.title")} · {props.dailyKcalIntake} {t("proj.kcalPerDay")}
         </CardLabel>
         <div className="flex gap-1">
           {HORIZONS.map((h) => (
@@ -112,14 +114,14 @@ export function WeightProjection(props: Props) {
       <div className="grid grid-cols-3 gap-3 mb-3">
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">
-            NOW
+            {t("proj.now")}
           </div>
           <div className="font-display text-2xl">{points[0].weightKg.toFixed(1)}</div>
           <div className="font-mono text-[10px] text-[color:var(--text-secondary)]">kg</div>
         </div>
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">
-            IN {weeks}W
+            {t("proj.inWeeks", { weeks })}
           </div>
           <div className="font-display text-2xl">{end.weightKg.toFixed(1)}</div>
           <div className="font-mono text-[10px] text-[color:var(--text-secondary)]">
@@ -129,13 +131,13 @@ export function WeightProjection(props: Props) {
         </div>
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">
-            DEFICIT
+            {t("proj.deficit")}
           </div>
           <div className="font-display text-2xl">
             {Math.round(points[0].dailyDeficitKcal)}
           </div>
           <div className="font-mono text-[10px] text-[color:var(--text-secondary)]">
-            kcal/day
+            {t("proj.deficitUnit")}
           </div>
         </div>
       </div>
@@ -157,12 +159,15 @@ export function WeightProjection(props: Props) {
       {targetWeeks != null && props.goalWeightKg && (
         <div className="mt-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--accent)] border-t border-[color:var(--border)] pt-3">
           <Target size={12} strokeWidth={1.75} />
-          {props.goalWeightKg.toFixed(1)} kg target reached at week {targetWeeks}
+          {t("proj.targetReached", {
+            kg: props.goalWeightKg.toFixed(1),
+            week: targetWeeks,
+          })}
         </div>
       )}
       {targetWeeks == null && props.goalWeightKg && props.goalWeightKg > 0 && (
         <div className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)] border-t border-[color:var(--border)] pt-3">
-          target {props.goalWeightKg.toFixed(1)} kg not reached within {weeks} weeks
+          {t("proj.targetNotReached", { kg: props.goalWeightKg.toFixed(1), weeks })}
         </div>
       )}
     </Card>

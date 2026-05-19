@@ -5,11 +5,13 @@ import { requireSession } from "@/lib/auth/session";
 import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { LanguageSwitcher } from "@/components/profile/language-switcher";
 import { bmi, bmiCategory, bmr, recommendedKcal, tdee, macroSplit } from "@/lib/nutrition";
 import { getMeasuredTdee } from "@/lib/whoop/tdee";
 import { Card, CardLabel } from "@/components/ui/card";
 import { MonoStat } from "@/components/nothing/mono-stat";
 import { resolveDisplayName } from "@/lib/utils";
+import { getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,7 @@ export default async function ProfilePage() {
   const { user } = await requireSession();
   const [p] = await db.select().from(profile).where(eq(profile.userId, user.id)).limit(1);
   const name = resolveDisplayName({ displayName: p?.displayName, email: user.email });
+  const currentLocale = await getLocale();
 
   const w = Number(p?.weightKg ?? 0);
   const h = Number(p?.heightCm ?? 0);
@@ -88,6 +91,10 @@ export default async function ProfilePage() {
         <div className="mt-2 -mx-3">
           <ThemeToggle />
         </div>
+      </Card>
+
+      <Card>
+        <LanguageSwitcher initialLocale={currentLocale} />
       </Card>
 
       <Card>

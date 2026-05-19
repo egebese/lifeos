@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Hand } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 type Row = { idiom: string; equiv: string; example: string };
 
@@ -20,6 +21,7 @@ const ROWS: Row[] = [
 
 export function HandMeasureLegend() {
   const [open, setOpen] = useState(false);
+  const t = useT();
   return (
     <div className="border border-[color:var(--border)]">
       <button
@@ -29,7 +31,7 @@ export function HandMeasureLegend() {
       >
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--text-secondary)]">
           <Hand size={12} strokeWidth={1.75} />
-          EL ÖLÇÜSÜ · PORSIYON REHBERI
+          {t("plan.handMeasureTitle")}
         </span>
         {open ? (
           <ChevronUp size={14} strokeWidth={1.5} className="text-[color:var(--text-secondary)]" />

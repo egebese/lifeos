@@ -4,6 +4,7 @@ import { useDemoStore } from "@/lib/demo/store";
 import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { LanguageSwitcher } from "@/components/profile/language-switcher";
 import { bmi, bmiCategory, bmr, recommendedKcal, tdee, macroSplit } from "@/lib/nutrition";
 import { Card, CardLabel } from "@/components/ui/card";
 import { MonoStat } from "@/components/nothing/mono-stat";
@@ -80,6 +81,10 @@ export default function ProfilePage() {
         <div className="mt-2 -mx-3">
           <ThemeToggle />
         </div>
+      </Card>
+
+      <Card>
+        <LanguageSwitcher />
       </Card>
 
       <Card>

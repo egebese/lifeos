@@ -544,6 +544,7 @@ export function buildSeed(): DemoState {
     activityLevel: "moderate",
     goal: "cut",
     targetWeightKg: "75.0",
+    locale: "en",
     updatedAt: new Date(),
   };
 

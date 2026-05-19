@@ -4,17 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, Apple, Heart, LayoutDashboard, User2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
+import type { DictKey } from "@/lib/i18n/dict";
 
-const ITEMS = [
-  { href: "/", label: "DASH", icon: LayoutDashboard },
-  { href: "/workouts", label: "TRAIN", icon: Activity },
-  { href: "/food", label: "FOOD", icon: Apple },
-  { href: "/whoop", label: "WHOOP", icon: Heart },
-  { href: "/profile", label: "ME", icon: User2 },
+type Item = { href: string; labelKey: DictKey; icon: typeof Activity };
+
+const ITEMS: Item[] = [
+  { href: "/", labelKey: "nav.dashShort", icon: LayoutDashboard },
+  { href: "/workouts", labelKey: "nav.trainShort", icon: Activity },
+  { href: "/food", labelKey: "nav.foodShort", icon: Apple },
+  { href: "/whoop", labelKey: "nav.whoopShort", icon: Heart },
+  { href: "/profile", labelKey: "nav.meShort", icon: User2 },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useT();
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[color:var(--black)] border-t border-[color:var(--border)] safe-bottom z-50">
       <div className="grid grid-cols-5">
@@ -34,7 +39,7 @@ export function BottomNav() {
               )}
             >
               <Icon size={20} strokeWidth={1.5} />
-              <span className="font-mono text-[10px] tracking-[0.08em]">{it.label}</span>
+              <span className="font-mono text-[10px] tracking-[0.08em]">{t(it.labelKey)}</span>
               {active && (
                 <span className="absolute top-0 h-[2px] w-8 bg-[color:var(--text-display)]" />
               )}

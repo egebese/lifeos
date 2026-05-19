@@ -53,6 +53,7 @@ export type Profile = {
   activityLevel: ActivityLevel | null;
   goal: Goal | null;
   targetWeightKg: string | null;
+  locale: "en" | "tr";
   updatedAt: Date;
 };
 

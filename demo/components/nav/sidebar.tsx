@@ -9,51 +9,55 @@ import {
   Calendar,
   Heart,
   LayoutDashboard,
-  RefreshCw,
+  LogOut,
   ShoppingCart,
   Sparkles,
   User2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
+import type { DictKey } from "@/lib/i18n/dict";
 
-const SECTIONS = [
+type Item = { href: string; labelKey: DictKey; icon: typeof Activity };
+type Section = { titleKey: DictKey; items: Item[] };
+
+const SECTIONS: Section[] = [
   {
-    title: "OVERVIEW",
+    titleKey: "nav.sectionOverview",
     items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/analysis", label: "Analysis", icon: BarChart3 },
+      { href: "/", labelKey: "nav.dashboard", icon: LayoutDashboard },
+      { href: "/analysis", labelKey: "nav.analysis", icon: BarChart3 },
     ],
   },
   {
-    title: "TRAIN",
+    titleKey: "nav.sectionTrain",
     items: [
-      { href: "/workouts", label: "Workouts", icon: Activity },
-      { href: "/programs", label: "Programs", icon: Calendar },
+      { href: "/workouts", labelKey: "nav.workouts", icon: Activity },
+      { href: "/programs", labelKey: "nav.programs", icon: Calendar },
     ],
   },
   {
-    title: "EAT",
+    titleKey: "nav.sectionEat",
     items: [
-      { href: "/food", label: "Food Log", icon: Apple },
-      { href: "/food/plan", label: "Meal Plan", icon: Sparkles },
-      { href: "/pantry", label: "Pantry", icon: ShoppingCart },
-      { href: "/preferences", label: "Preferences", icon: Apple },
+      { href: "/food", labelKey: "nav.foodLog", icon: Apple },
+      { href: "/food/plan", labelKey: "nav.mealPlan", icon: Sparkles },
+      { href: "/pantry", labelKey: "nav.pantry", icon: ShoppingCart },
+      { href: "/preferences", labelKey: "nav.preferences", icon: Apple },
     ],
   },
   {
-    title: "DATA",
+    titleKey: "nav.sectionData",
     items: [
-      { href: "/whoop", label: "Whoop", icon: Heart },
-      { href: "/profile", label: "Profile", icon: User2 },
+      { href: "/whoop", labelKey: "nav.whoop", icon: Heart },
+      { href: "/profile", labelKey: "nav.profile", icon: User2 },
     ],
   },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { reset } = useDemoStore();
+  const t = useT();
   return (
     <aside className="hidden md:flex md:flex-col w-64 border-r border-[color:var(--border)] bg-[color:var(--black)] sticky top-0 h-dvh">
       <div className="p-6 border-b border-[color:var(--border)]">
@@ -62,8 +66,8 @@ export function Sidebar() {
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-6">
         {SECTIONS.map((sec) => (
-          <div key={sec.title}>
-            <div className="mono-label px-3 mb-2">{sec.title}</div>
+          <div key={sec.titleKey}>
+            <div className="mono-label px-3 mb-2">{t(sec.titleKey)}</div>
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active =
@@ -83,7 +87,7 @@ export function Sidebar() {
                       )}
                     >
                       <Icon size={16} strokeWidth={1.5} />
-                      <span>{it.label}</span>
+                      <span>{t(it.labelKey)}</span>
                       {active && (
                         <span className="ml-auto w-1 h-4 bg-[color:var(--accent)]" />
                       )}
@@ -99,20 +103,15 @@ export function Sidebar() {
         <div className="px-3 py-2">
           <ThemeToggle />
         </div>
-        <div className="p-3 border-t border-[color:var(--border)]">
+        <form action="/api/auth/logout" method="post" className="p-3 border-t border-[color:var(--border)]">
           <button
-            type="button"
-            onClick={() => {
-              if (confirm("Reset demo data to defaults? Your edits in this browser will be lost.")) {
-                reset();
-              }
-            }}
+            type="submit"
             className="flex items-center gap-3 px-3 py-2.5 text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--accent)] w-full"
           >
-            <RefreshCw size={16} strokeWidth={1.5} />
-            <span>Reset demo</span>
+            <LogOut size={16} strokeWidth={1.5} />
+            <span>{t("nav.signOut")}</span>
           </button>
-        </div>
+        </form>
       </div>
     </aside>
   );

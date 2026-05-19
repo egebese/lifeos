@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 function addDays(ymd: string, n: number): string {
   const [y, m, d] = ymd.split("-").map(Number);
@@ -22,6 +23,7 @@ type Props = {
 
 export function DayNav({ selected, today }: Props) {
   const router = useRouter();
+  const t = useT();
   const prev = addDays(selected, -1);
   const next = addDays(selected, 1);
   const isToday = selected === today;
@@ -50,7 +52,7 @@ export function DayNav({ selected, today }: Props) {
 
   return (
     <div className="flex items-center gap-1 shrink-0">
-      <Link href={prevHref} aria-label="Previous day" className={btn} prefetch={false}>
+      <Link href={prevHref} aria-label={t("common.prev")} className={btn} prefetch={false}>
         <ChevronLeft size={14} strokeWidth={1.75} />
       </Link>
       <Link
@@ -63,10 +65,10 @@ export function DayNav({ selected, today }: Props) {
         }`}
         aria-current={isToday ? "page" : undefined}
       >
-        TODAY
+        {t("common.today")}
       </Link>
       {!isToday && (
-        <Link href={nextHref} aria-label="Next day" className={btn} prefetch={false}>
+        <Link href={nextHref} aria-label={t("common.next")} className={btn} prefetch={false}>
           <ChevronRight size={14} strokeWidth={1.75} />
         </Link>
       )}

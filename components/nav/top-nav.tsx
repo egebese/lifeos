@@ -5,19 +5,21 @@ import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useT } from "@/lib/i18n/client";
+import type { DictKey } from "@/lib/i18n/dict";
 
-type Item = { href: string; label: string };
+type Item = { href: string; labelKey: DictKey };
 
 const NAV: Item[] = [
-  { href: "/", label: "Dashboard" },
-  { href: "/workouts", label: "Workouts" },
-  { href: "/programs", label: "Programs" },
-  { href: "/food", label: "Food" },
-  { href: "/food/plan", label: "Meal Plan" },
-  { href: "/pantry", label: "Pantry" },
-  { href: "/whoop", label: "Whoop" },
-  { href: "/analysis", label: "Analysis" },
-  { href: "/profile", label: "Profile" },
+  { href: "/", labelKey: "nav.dashboard" },
+  { href: "/workouts", labelKey: "nav.workouts" },
+  { href: "/programs", labelKey: "nav.programs" },
+  { href: "/food", labelKey: "nav.food" },
+  { href: "/food/plan", labelKey: "nav.mealPlan" },
+  { href: "/pantry", labelKey: "nav.pantry" },
+  { href: "/whoop", labelKey: "nav.whoop" },
+  { href: "/analysis", labelKey: "nav.analysis" },
+  { href: "/profile", labelKey: "nav.profile" },
 ];
 
 function pickActive(pathname: string): string | null {
@@ -37,6 +39,7 @@ function pickActive(pathname: string): string | null {
 export function TopNav() {
   const pathname = usePathname();
   const active = pickActive(pathname);
+  const t = useT();
 
   return (
     <header className="hidden md:block sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--black)]/95 backdrop-blur safe-top">
@@ -66,7 +69,7 @@ export function TopNav() {
                           : "text-[color:var(--text-secondary)] hover:text-[color:var(--text-display)]",
                       )}
                     >
-                      {it.label}
+                      {t(it.labelKey)}
                       <span
                         aria-hidden
                         className={cn(
@@ -86,8 +89,8 @@ export function TopNav() {
             <form action="/api/auth/logout" method="post">
               <button
                 type="submit"
-                aria-label="Sign out"
-                title="Sign out"
+                aria-label={t("nav.signOut")}
+                title={t("nav.signOut")}
                 className="inline-flex items-center justify-center w-10 h-10 text-[color:var(--text-secondary)] hover:text-[color:var(--accent)] transition-colors"
               >
                 <LogOut size={16} strokeWidth={1.5} />

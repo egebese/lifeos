@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/select";
 import { PhotoDrop } from "@/components/food/photo-drop";
 import { FoodNameAutocomplete } from "@/components/food/name-autocomplete";
 import type { FoodSuggestion } from "@/app/api/food/suggest/route";
+import { useT } from "@/lib/i18n/client";
 
 type EstimateResult = {
   name: string;
@@ -20,6 +21,7 @@ type EstimateResult = {
 
 export function NewFoodForm() {
   const router = useRouter();
+  const t = useT();
   const [meal, setMeal] = useState<"breakfast" | "lunch" | "dinner" | "snack">("snack");
   const [name, setName] = useState("");
   const [kcal, setKcal] = useState("");
@@ -93,16 +95,16 @@ export function NewFoodForm() {
 
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <div className="mono-label mb-1">MEAL</div>
+          <div className="mono-label mb-1">{t("food.meal")}</div>
           <Select value={meal} onChange={(e) => setMeal(e.target.value as never)}>
-            <option value="breakfast">breakfast</option>
-            <option value="lunch">lunch</option>
-            <option value="dinner">dinner</option>
-            <option value="snack">snack</option>
+            <option value="breakfast">{t("meal.breakfastLower")}</option>
+            <option value="lunch">{t("meal.lunchLower")}</option>
+            <option value="dinner">{t("meal.dinnerLower")}</option>
+            <option value="snack">{t("meal.snackLower")}</option>
           </Select>
         </div>
         <div className="col-span-2">
-          <div className="mono-label mb-1">NAME</div>
+          <div className="mono-label mb-1">{t("food.name")}</div>
           <FoodNameAutocomplete
             value={name}
             onChange={setName}
@@ -118,7 +120,7 @@ export function NewFoodForm() {
           />
         </div>
         <div>
-          <div className="mono-label mb-1">KCAL</div>
+          <div className="mono-label mb-1">{t("food.kcal")}</div>
           <Input
             type="number"
             inputMode="numeric"
@@ -127,7 +129,7 @@ export function NewFoodForm() {
           />
         </div>
         <div>
-          <div className="mono-label mb-1">PROTEIN (G)</div>
+          <div className="mono-label mb-1">{t("food.proteinG")}</div>
           <Input
             type="number"
             inputMode="decimal"
@@ -136,7 +138,7 @@ export function NewFoodForm() {
           />
         </div>
         <div>
-          <div className="mono-label mb-1">CARBS (G)</div>
+          <div className="mono-label mb-1">{t("food.carbsG")}</div>
           <Input
             type="number"
             inputMode="decimal"
@@ -145,7 +147,7 @@ export function NewFoodForm() {
           />
         </div>
         <div>
-          <div className="mono-label mb-1">FAT (G)</div>
+          <div className="mono-label mb-1">{t("food.fatG")}</div>
           <Input
             type="number"
             inputMode="decimal"
@@ -159,7 +161,7 @@ export function NewFoodForm() {
 
       <div className="flex justify-end">
         <Button type="submit" disabled={busy || !name}>
-          {busy ? "…" : "SAVE →"}
+          {busy ? t("common.busy") : `${t("common.save")} →`}
         </Button>
       </div>
     </form>
