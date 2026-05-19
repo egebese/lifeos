@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 export function DeleteProgramButton({
@@ -13,6 +14,7 @@ export function DeleteProgramButton({
   programId: string;
   programName: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const { update } = useDemoStore();
   const [confirming, setConfirming] = useState(false);
@@ -44,7 +46,7 @@ export function DeleteProgramButton({
         aria-label={`delete ${programName}`}
       >
         <Trash2 size={14} strokeWidth={1.5} className="mr-2" />
-        DELETE
+        {t("prog.deleteButtonLabel")}
       </Button>
     );
   }
@@ -52,13 +54,13 @@ export function DeleteProgramButton({
   return (
     <div className="flex items-center gap-2">
       <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)]">
-        SURE?
+        {t("prog.deleteConfirmation")}
       </span>
       <Button variant="ghost" size="sm" onClick={() => setConfirming(false)} disabled={busy}>
-        CANCEL
+        {t("common.cancel")}
       </Button>
       <Button variant="danger" size="sm" onClick={doDelete} disabled={busy}>
-        {busy ? "DELETING…" : "YES, DELETE"}
+        {busy ? "…" : `YES, ${t("prog.deleteButtonLabel")}`}
       </Button>
     </div>
   );

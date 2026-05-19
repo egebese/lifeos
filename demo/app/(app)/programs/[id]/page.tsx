@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { useDemoStore, DEMO_USER_ID } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Card } from "@/components/ui/card";
 import { StartDayForm } from "./start-day-form";
 import { DeleteProgramButton } from "./delete-program-button";
 
 export default function ProgramDetail() {
+  const t = useT();
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { state } = useDemoStore();
@@ -19,9 +21,9 @@ export default function ProgramDetail() {
   if (!p) {
     return (
       <div className="font-mono text-sm text-[color:var(--text-secondary)] py-12 text-center">
-        program not found —{" "}
+        {t("prog.programNotFound")}{" "}
         <Link href="/programs" className="text-[color:var(--accent)]">
-          back
+          {t("common.backLower")}
         </Link>
       </div>
     );
@@ -64,7 +66,7 @@ export default function ProgramDetail() {
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <Link href="/programs" className="mono-label hover:text-[color:var(--text-display)]">
-            ← PROGRAMS
+            {t("prog.editBackLink")}
           </Link>
           <h1 className="font-display text-4xl mt-2 break-words">{p.name}</h1>
           {p.description && (
@@ -77,7 +79,7 @@ export default function ProgramDetail() {
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Link href={`/programs/${p.id}/edit`} className="btn btn--outline btn--sm">
               <Pencil size={14} strokeWidth={1.5} className="mr-2" />
-              EDIT
+              {t("prog.editButton")}
             </Link>
             <DeleteProgramButton programId={p.id} programName={p.name} />
           </div>
@@ -89,7 +91,7 @@ export default function ProgramDetail() {
           <Card key={day.id}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="mono-label">DAY {day.dayIndex + 1}</div>
+                <div className="mono-label">{t("prog.dayLabel")} {day.dayIndex + 1}</div>
                 <div className="font-display text-xl mt-1">{day.name}</div>
               </div>
               <StartDayForm programId={p.id} programDayId={day.id} />

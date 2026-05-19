@@ -351,6 +351,58 @@ const en = {
   "plan.generatingForm": "GENERATING…",
   "plan.generateForm": "GENERATE →",
   "plan.usesProfile": "Uses profile goal + preferences + pantry. Sonnet 4.6 via fal openrouter.",
+
+  // ---- Workout detail / session
+  "work.back": "← BACK",
+  "work.workoutNotFound": "workout not found —",
+  "work.startDay": "START DAY →",
+
+  // ---- Exercise session UI
+  "ex.freeSessionInline": "free session — add exercises from the library",
+  "ex.addExerciseFromLibrary": "+ ADD EXERCISE FROM LIBRARY",
+
+  // ---- Exercise library page
+  "ex.libraryPage": "exercises",
+  "ex.searchPlaceholder": "bench press, squat…",
+  "ex.bodyPartLabel": "BODY PART",
+  "ex.allLabel": "all",
+
+  // ---- Program creation
+  "prog.createPageTitle": "new program",
+  "prog.orManualSeparator": "OR · MANUAL",
+  "prog.blankProgramLabel": "BLANK PROGRAM",
+  "prog.aiAutopilotLabel": "AI · AUTOPILOT",
+  "prog.goalLabel": "GOAL",
+  "prog.experienceLabel": "EXPERIENCE",
+  "prog.daysPerWeekLabel": "DAYS / WEEK",
+  "prog.sessionLengthLabel": "SESSION LENGTH",
+  "prog.minLabel": "min",
+  "prog.equipmentLabel": "EQUIPMENT",
+  "prog.focusNotesLabel": "FOCUS / NOTES (optional)",
+  "prog.injuriesLimitsLabel": "INJURIES / LIMITS (optional)",
+  "prog.generateProgramButton": "GENERATE PROGRAM →",
+  "prog.aiDemoMessage": "Demo: AI program generation runs Claude Sonnet via fal.ai in the self-hosted version. Use the manual form below, or check github.com/egebese/lifeos.",
+  "prog.programNotFound": "program not found —",
+  "prog.editBackLink": "← PROGRAMS",
+  "prog.editButton": "EDIT",
+  "prog.dayLabel": "DAY",
+  "prog.deleteButtonLabel": "DELETE",
+  "prog.deleteConfirmation": "SURE?",
+  "prog.deleteDayConfirmation": "Delete day \"{day}\" and all its {count} exercises?",
+  "prog.addDayButton": "+ ADD DAY",
+  "prog.addExerciseButton": "+ ADD EXERCISE",
+  "prog.noExercisesYetInline": "→ no exercises yet",
+  "prog.editingLabel": "EDITING",
+  "prog.doneButton": "DONE",
+  "prog.nameLabel": "NAME",
+  "prog.descriptionLabel": "DESCRIPTION",
+
+  // ---- Shared UI
+  "common.startButton": "START →",
+  "common.createButton": "CREATE →",
+  "common.libraryCount": "LIBRARY · {count} EXERCISES",
+  "common.backLower": "back",
+  "common.freeNoProgram": "— free / no program —",
 } satisfies Record<string, string>;
 
 export type DictKey = keyof typeof en;
@@ -506,10 +558,10 @@ const tr: Record<DictKey, string> = {
   "profile.language": "DİL",
   "profile.languageHint": "Arayüz metinlerini etkiler. AI yanıtları her zaman İngilizce gelir.",
   "prof.userProfile": "KULLANICI PROFİLİ",
-  "prof.recommendedMacros": "ÖNERİLEN MAKRONUTRİYENLER",
+  "prof.recommendedMacros": "ÖNERİLEN MAKROLAR",
   "prof.edit": "DÜZENLE",
-  "prof.appearance": "GÖRÜNÜŞÜm",
-  "prof.security": "GÜVENLİK · ŞİFRE DEĞIŞ",
+  "prof.appearance": "GÖRÜNÜM",
+  "prof.security": "GÜVENLİK · ŞİFREYİ DEĞİŞTİR",
 
   // ---- Greetings
   "greet.morning": "günaydın",
@@ -526,8 +578,8 @@ const tr: Record<DictKey, string> = {
   // ---- Preferences
   "pref.title": "tercihler",
   "pref.tasteProfile": "TAD PROFİLİ",
-  "pref.liked": "SEVDİKLERİ",
-  "pref.disliked": "SEVMEDİKLERİ",
+  "pref.liked": "SEVDİKLERİM",
+  "pref.disliked": "SEVMEDİKLERİM",
   "pref.allergy": "ALERJİ",
 
   // ---- Analysis
@@ -552,7 +604,7 @@ const tr: Record<DictKey, string> = {
   "work.title": "antrenmanlar",
   "work.history": "GEÇMİŞ",
   "work.programs": "PROGRAMLAR →",
-  "work.exerciseLibrary": "EGZERSIZ KÜTÜPHANESI (1324) →",
+  "work.exerciseLibrary": "EGZERSİZ KÜTÜPHANESİ (1324) →",
   "work.noWorkoutsYet": "henüz antrenman yok —",
   "work.startOne": "yeni başlat",
   "work.completed": "TAMAMLANDI",
@@ -565,23 +617,23 @@ const tr: Record<DictKey, string> = {
   "ex.history": "GEÇMİŞ",
   "ex.workouts": "antrenmanlar",
   "ex.programs": "PROGRAMLAR",
-  "ex.exerciseLibrary": "EGZERSIZ KÜTÜPHANESI",
+  "ex.exerciseLibrary": "EGZERSİZ KÜTÜPHANESİ",
   "ex.new": "+ YENİ",
   "ex.sets": "set",
   "ex.completed": "TAMAMLANDI",
   "ex.inProgress": "DEVAM EDİYOR",
   "ex.noWorkoutsYet": "henüz antrenman yok —",
   "ex.startOne": "yeni başlat",
-  "ex.library1324": "KÜTÜPHANE · 1324 EGZERSIZ",
+  "ex.library1324": "KÜTÜPHANE · 1324 EGZERSİZ",
   "ex.search": "ARA",
   "ex.bodyPart": "BÖLGE",
   "ex.all": "hepsi",
   "ex.filter": "FİLTRE →",
   "ex.freeSession": "serbest oturum — kütüphaneden egzersiz ekleyin",
   "ex.target": "HEDEF",
-  "ex.addExerciseLibrary": "+ KÜTÜPHANEDEN EGZERSIZ EKLE",
-  "ex.restTimer": "+ DİNLENME TİMERİ",
-  "ex.endSession": "OTURUMU BITIR →",
+  "ex.addExerciseLibrary": "+ KÜTÜPHANEDEN EGZERSİZ EKLE",
+  "ex.restTimer": "+ DİNLENME SAYACI",
+  "ex.endSession": "OTURUMU BİTİR →",
 
   // ---- Whoop
   "whoop.title": "whoop",
@@ -591,7 +643,7 @@ const tr: Record<DictKey, string> = {
   "whoop.connectDesc": "Toparlanma, uyku, efor ve antrenmanları senkronize etmek için Whoop hesabınızı bağlayın.",
   "whoop.connectButton": "WHOOP BAĞLA →",
   "whoop.demoBehavior": "Demo: BAĞLA'yı tıklamak, bağlı durumu değiştirecek ve toplanmış verileri gösterecektir.",
-  "whoop.connected": "→ BAĞLANDI. VERİ ÇEKMEK İÇİN SENKRONIZE ET'İ ÇALIŞTIR.",
+  "whoop.connected": "→ BAĞLANDI. VERİ ÇEKMEK İÇİN SENKRONİZE ET'İ ÇALIŞTIR.",
   "whoop.recovery": "TOPARLANMA",
   "whoop.today": "BUGÜN",
   "whoop.sleep": "UYKU",
@@ -634,8 +686,8 @@ const tr: Record<DictKey, string> = {
   "prog.equipment": "EKIPMAN",
   "prog.focusNotes": "ODAK / NOTLAR (isteğe bağlı)",
   "prog.focusPlaceholder": "ör. sırt ve arka zincir üzerine yoğunlaş, bileşik hareketleri tercih et",
-  "prog.injuriesLimits": "İNJURY / LIMITLER (isteğe bağlı)",
-  "prog.injuriesPlaceholder": "ör. ağırlık kaldırma yok, hassas alt sırt",
+  "prog.injuriesLimits": "YARALANMALAR / KISITLAR (isteğe bağlı)",
+  "prog.injuriesPlaceholder": "ör. baş üstü itme yok, hassas alt sırt",
   "prog.generatingProgram": "→ AI ile program oluşturuluyor — bu 10-20 saniye sürebilir…",
   "prog.exercisesNotMatched": "egzersiz eşleştirilemedi:",
   "prog.generateProgram": "PROGRAM OLUŞTUR →",
@@ -644,10 +696,10 @@ const tr: Record<DictKey, string> = {
   "prog.backToPrograms": "← PROGRAMLAR",
   "prog.edit": "DÜZENLE",
   "prog.editing": "DÜZENLENİYOR",
-  "prog.done": "BITTI",
+  "prog.done": "BİTTİ",
   "prog.day": "GÜN",
   "prog.addDay": "+ GÜN EKLE",
-  "prog.addExercise": "+ EGZERSIZ EKLE",
+  "prog.addExercise": "+ EGZERSİZ EKLE",
   "prog.noExercisesYet": "→ henüz egzersiz yok",
   "prog.deleteDay": "\"{day}\" gününü ve tüm {count} egzersizini sil?",
   "prog.sets": "SET",
@@ -666,12 +718,12 @@ const tr: Record<DictKey, string> = {
   "pwd.current": "GEÇERLİ",
   "pwd.new": "YENİ",
   "pwd.confirm": "ONAYLA",
-  "pwd.changePassword": "ŞİFRE DEĞIŞ →",
+  "pwd.changePassword": "ŞİFREYİ DEĞİŞTİR →",
   "pwd.atLeast6": "EN AZ 6 KARAKTER",
   "pwd.dontMatch": "ŞİFRELER EŞLEŞMEZ",
   "pwd.currentWrong": "MEVCUT ŞİFRE YANLIŞ",
   "pwd.error": "HATA",
-  "pwd.updated": "ŞİFRE GÜNCELLENDI",
+  "pwd.updated": "ŞİFRE GÜNCELLENDİ",
   "pwd.demoNotChanged": "DEMO: ŞİFRE ASLINDA DEĞİŞMEDİ",
 
   // ---- Food
@@ -694,6 +746,58 @@ const tr: Record<DictKey, string> = {
   "plan.generatingForm": "OLUŞTURULUYOR…",
   "plan.generateForm": "OLUŞTUR →",
   "plan.usesProfile": "Profil hedefi + tercihleri + kileri kullanır. Sonnet 4.6 fal openrouter aracılığıyla.",
+
+  // ---- Workout detail / session
+  "work.back": "← GERİ",
+  "work.workoutNotFound": "antrenman bulunamadı —",
+  "work.startDay": "GÜNÜ BAŞLAT →",
+
+  // ---- Exercise session UI
+  "ex.freeSessionInline": "serbest oturum — kütüphaneden egzersiz ekleyin",
+  "ex.addExerciseFromLibrary": "+ KÜTÜPHANEDEN EGZERSİZ EKLE",
+
+  // ---- Exercise library page
+  "ex.libraryPage": "egzersizler",
+  "ex.searchPlaceholder": "bench press, squat…",
+  "ex.bodyPartLabel": "BÖLGE",
+  "ex.allLabel": "hepsi",
+
+  // ---- Program creation
+  "prog.createPageTitle": "yeni program",
+  "prog.orManualSeparator": "VEYA · MANUEL",
+  "prog.blankProgramLabel": "BOŞ PROGRAM",
+  "prog.aiAutopilotLabel": "AI · OTONOM PILOT",
+  "prog.goalLabel": "HEDEF",
+  "prog.experienceLabel": "TECRÜBE",
+  "prog.daysPerWeekLabel": "GÜN / HAFTA",
+  "prog.sessionLengthLabel": "OTURUM SÜRESİ",
+  "prog.minLabel": "dk",
+  "prog.equipmentLabel": "EKIPMAN",
+  "prog.focusNotesLabel": "ODAK / NOTLAR (isteğe bağlı)",
+  "prog.injuriesLimitsLabel": "YARALANMALAR / KISITLAR (isteğe bağlı)",
+  "prog.generateProgramButton": "PROGRAM OLUŞTUR →",
+  "prog.aiDemoMessage": "Demo: AI program oluşturma, self-hosted sürümde fal.ai aracılığıyla Claude Sonnet çalıştırır. Aşağıdaki manuel formu kullanın veya github.com/egebese/lifeos adresini kontrol edin.",
+  "prog.programNotFound": "program bulunamadı —",
+  "prog.editBackLink": "← PROGRAMLAR",
+  "prog.editButton": "DÜZENLE",
+  "prog.dayLabel": "GÜN",
+  "prog.deleteButtonLabel": "SİL",
+  "prog.deleteConfirmation": "EMİN MİSİN?",
+  "prog.deleteDayConfirmation": "\"{day}\" gününü ve tüm {count} egzersizini sil?",
+  "prog.addDayButton": "+ GÜN EKLE",
+  "prog.addExerciseButton": "+ EGZERSİZ EKLE",
+  "prog.noExercisesYetInline": "→ henüz egzersiz yok",
+  "prog.editingLabel": "DÜZENLENİYOR",
+  "prog.doneButton": "BİTTİ",
+  "prog.nameLabel": "İSİM",
+  "prog.descriptionLabel": "AÇIKLAMA",
+
+  // ---- Shared UI
+  "common.startButton": "BAŞLAT →",
+  "common.createButton": "OLUŞTUR →",
+  "common.libraryCount": "KÜTÜPHANE · {count} EGZERSİZ",
+  "common.backLower": "geri",
+  "common.freeNoProgram": "— serbest / program yok —",
 };
 
 const DICTS: Record<Locale, Record<DictKey, string>> = { en, tr };

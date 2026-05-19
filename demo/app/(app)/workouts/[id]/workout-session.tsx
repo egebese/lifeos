@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Info } from "lucide-react";
 import { useDemoStore, generateId } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { SetRow, type SetRowValue } from "@/components/workout/set-row";
 import { RestTimer } from "@/components/workout/rest-timer";
@@ -53,6 +54,7 @@ export function WorkoutSession({
   existingSets: ExistingSet[];
   ended: boolean;
 }) {
+  const t = useT();
   const { state, update } = useDemoStore();
   const [exList, setExList] = useState<WorkoutExercise[]>(initialExercises);
   const [localSets, setLocalSets] = useState<ExistingSet[]>(existingSets);
@@ -148,7 +150,7 @@ export function WorkoutSession({
       {exList.length === 0 && (
         <Card>
           <div className="font-mono text-sm text-[color:var(--text-secondary)] text-center py-6">
-            free session — add exercises from the library
+            {t("ex.freeSessionInline")}
           </div>
         </Card>
       )}
@@ -245,7 +247,7 @@ export function WorkoutSession({
           onClick={() => setPickerOpen(true)}
           className="w-full border border-dashed border-[color:var(--border-visible)] dot-grid-subtle py-5 font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-secondary)] hover:text-[color:var(--text-display)] hover:border-[color:var(--text-display)] transition"
         >
-          + ADD EXERCISE FROM LIBRARY
+          {t("ex.addExerciseFromLibrary")}
         </button>
       )}
 
@@ -260,12 +262,12 @@ export function WorkoutSession({
                   onClick={() => setRestOpen(true)}
                   className="font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--text-secondary)] hover:text-[color:var(--text-display)]"
                 >
-                  + REST TIMER
+                  {t("ex.restTimer")}
                 </button>
               )}
             </div>
             <Button variant="accent" onClick={endWorkout}>
-              END SESSION →
+              {t("ex.endSession")}
             </Button>
           </div>
         </div>

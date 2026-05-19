@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 
@@ -19,6 +20,7 @@ const EQUIPMENT = [
 ];
 
 export function AiProgramForm() {
+  const t = useT();
   const [goal, setGoal] = useState<Goal>("hypertrophy");
   const [level, setLevel] = useState<Level>("intermediate");
   const [daysPerWeek, setDaysPerWeek] = useState(4);
@@ -42,45 +44,43 @@ export function AiProgramForm() {
 
   function generate(e: React.FormEvent) {
     e.preventDefault();
-    setStatus(
-      "Demo: AI program generation runs Claude Sonnet via fal.ai in the self-hosted version. Use the manual form below, or check github.com/egebese/lifeos.",
-    );
+    setStatus(t("prog.aiDemoMessage"));
   }
 
   return (
     <form onSubmit={generate} className="space-y-6">
       <div className="flex items-center gap-2">
         <Sparkles size={16} strokeWidth={1.5} className="text-[color:var(--accent)]" />
-        <div className="mono-label">AI · AUTOPILOT</div>
+        <div className="mono-label">{t("prog.aiAutopilotLabel")}</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <div className="mono-label mb-1">GOAL</div>
+          <div className="mono-label mb-1">{t("prog.goalLabel")}</div>
           <Select
             value={goal}
             onChange={(e) => setGoal(e.target.value as Goal)}
           >
-            <option value="strength">strength</option>
-            <option value="hypertrophy">hypertrophy (muscle)</option>
-            <option value="fat_loss">fat loss</option>
-            <option value="endurance">endurance</option>
-            <option value="general">general fitness</option>
+            <option value="strength">{t("prog.strength")}</option>
+            <option value="hypertrophy">{t("prog.hypertrophy")}</option>
+            <option value="fat_loss">{t("prog.fatLoss")}</option>
+            <option value="endurance">{t("prog.endurance")}</option>
+            <option value="general">{t("prog.generalFitness")}</option>
           </Select>
         </div>
         <div>
-          <div className="mono-label mb-1">EXPERIENCE</div>
+          <div className="mono-label mb-1">{t("prog.experienceLabel")}</div>
           <Select
             value={level}
             onChange={(e) => setLevel(e.target.value as Level)}
           >
-            <option value="beginner">beginner ( &lt; 1y )</option>
-            <option value="intermediate">intermediate ( 1-3y )</option>
-            <option value="advanced">advanced ( 3y+ )</option>
+            <option value="beginner">{t("prog.beginner")}</option>
+            <option value="intermediate">{t("prog.intermediate")}</option>
+            <option value="advanced">{t("prog.advanced")}</option>
           </Select>
         </div>
         <div>
-          <div className="mono-label mb-1">DAYS / WEEK</div>
+          <div className="mono-label mb-1">{t("prog.daysPerWeekLabel")}</div>
           <Select
             value={String(daysPerWeek)}
             onChange={(e) => setDaysPerWeek(Number(e.target.value))}
@@ -93,14 +93,14 @@ export function AiProgramForm() {
           </Select>
         </div>
         <div>
-          <div className="mono-label mb-1">SESSION LENGTH</div>
+          <div className="mono-label mb-1">{t("prog.sessionLengthLabel")}</div>
           <Select
             value={String(sessionMinutes)}
             onChange={(e) => setSessionMinutes(Number(e.target.value))}
           >
             {[30, 45, 60, 75, 90, 120].map((m) => (
               <option key={m} value={m}>
-                {m} min
+                {m} {t("prog.minLabel")}
               </option>
             ))}
           </Select>
@@ -108,7 +108,7 @@ export function AiProgramForm() {
       </div>
 
       <div>
-        <div className="mono-label mb-2">EQUIPMENT</div>
+        <div className="mono-label mb-2">{t("prog.equipmentLabel")}</div>
         <div className="flex flex-wrap gap-2">
           {EQUIPMENT.map((item) => {
             const active = equipment.includes(item);
@@ -127,23 +127,23 @@ export function AiProgramForm() {
       </div>
 
       <div>
-        <div className="mono-label mb-1">FOCUS / NOTES (optional)</div>
+        <div className="mono-label mb-1">{t("prog.focusNotesLabel")}</div>
         <textarea
           value={focus}
           onChange={(e) => setFocus(e.target.value)}
           rows={2}
-          placeholder="e.g. emphasize back & posterior chain, prefer compound lifts"
+          placeholder={t("prog.focusPlaceholder")}
           className="w-full bg-transparent border-b border-[color:var(--border-visible)] py-2 font-body text-base text-[color:var(--text-display)] focus:outline-none focus:border-[color:var(--accent)] resize-none placeholder:text-[color:var(--text-disabled)]"
         />
       </div>
 
       <div>
-        <div className="mono-label mb-1">INJURIES / LIMITS (optional)</div>
+        <div className="mono-label mb-1">{t("prog.injuriesLimitsLabel")}</div>
         <textarea
           value={injuries}
           onChange={(e) => setInjuries(e.target.value)}
           rows={2}
-          placeholder="e.g. no overhead pressing, sensitive lower back"
+          placeholder={t("prog.injuriesPlaceholder")}
           className="w-full bg-transparent border-b border-[color:var(--border-visible)] py-2 font-body text-base text-[color:var(--text-display)] focus:outline-none focus:border-[color:var(--accent)] resize-none placeholder:text-[color:var(--text-disabled)]"
         />
       </div>
@@ -156,7 +156,7 @@ export function AiProgramForm() {
 
       <div className="flex justify-end gap-3">
         <Button type="submit" variant="accent" disabled={equipment.length === 0}>
-          GENERATE PROGRAM →
+          {t("prog.generateProgramButton")}
         </Button>
       </div>
     </form>

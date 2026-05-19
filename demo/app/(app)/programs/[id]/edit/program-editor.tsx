@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Plus, Trash2, X } from "lucide-react";
 import { useDemoStore, generateId } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExercisePicker } from "@/components/workout/exercise-picker";
@@ -42,6 +43,7 @@ export function ProgramEditor({
   initialDescription: string;
   initialDays: EditorDay[];
 }) {
+  const t = useT();
   const { update } = useDemoStore();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
@@ -245,21 +247,21 @@ export function ProgramEditor({
             href={`/programs/${programId}`}
             className="mono-label hover:text-[color:var(--text-display)]"
           >
-            ← BACK
+            {t("work.back")}
           </Link>
-          <div className="mono-label mt-2">EDITING</div>
+          <div className="mono-label mt-2">{t("prog.editingLabel")}</div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <StatusBadge />
           <Link href={`/programs/${programId}`} className="btn btn--outline btn--sm">
-            DONE
+            {t("prog.doneButton")}
           </Link>
         </div>
       </header>
 
       <Card className="space-y-5">
         <div>
-          <div className="mono-label mb-1">NAME</div>
+          <div className="mono-label mb-1">{t("prog.nameLabel")}</div>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -270,7 +272,7 @@ export function ProgramEditor({
           />
         </div>
         <div>
-          <div className="mono-label mb-1">DESCRIPTION</div>
+          <div className="mono-label mb-1">{t("prog.descriptionLabel")}</div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -289,7 +291,7 @@ export function ProgramEditor({
         {days.map((day) => (
           <Card key={day.id} className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="mono-label shrink-0">DAY {day.dayIndex + 1}</div>
+              <div className="mono-label shrink-0">{t("prog.dayLabel")} {day.dayIndex + 1}</div>
               <input
                 defaultValue={day.name}
                 onBlur={(e) => {
@@ -309,7 +311,7 @@ export function ProgramEditor({
                 onClick={() => {
                   if (
                     confirm(
-                      `Delete day "${day.name}" and all its ${day.exercises.length} exercises?`,
+                      t("prog.deleteDayConfirmation", { day: day.name, count: day.exercises.length }),
                     )
                   ) {
                     deleteDay(day.id);
@@ -348,21 +350,21 @@ export function ProgramEditor({
                     )}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
                       <NumField
-                        label="SETS"
+                        label={t("prog.sets")}
                         value={ex.targetSets}
                         onCommit={(v) =>
                           updateExercise(day.id, ex.id, "targetSets", v)
                         }
                       />
                       <NumField
-                        label="REPS"
+                        label={t("prog.reps")}
                         value={ex.targetReps}
                         onCommit={(v) =>
                           updateExercise(day.id, ex.id, "targetReps", v)
                         }
                       />
                       <NumField
-                        label="KG"
+                        label={t("prog.kg")}
                         value={ex.targetWeightKg}
                         step="0.5"
                         onCommit={(v) =>
@@ -372,7 +374,7 @@ export function ProgramEditor({
                     </div>
                     <input
                       defaultValue={ex.notes ?? ""}
-                      placeholder="notes (form cue, tempo)"
+                      placeholder={t("prog.notesPlaceholder")}
                       onBlur={(e) =>
                         updateExercise(day.id, ex.id, "notes", e.target.value)
                       }
@@ -391,7 +393,7 @@ export function ProgramEditor({
               ))}
               {day.exercises.length === 0 && (
                 <li className="font-mono text-[11px] text-[color:var(--text-disabled)] uppercase tracking-[0.08em] py-2">
-                  → no exercises yet
+                  {t("prog.noExercisesYetInline")}
                 </li>
               )}
             </ul>
@@ -402,7 +404,7 @@ export function ProgramEditor({
               className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-[color:var(--border-visible)] hover:border-[color:var(--text-display)] font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--text-secondary)] hover:text-[color:var(--text-display)] transition-colors"
             >
               <Plus size={14} strokeWidth={1.5} />
-              ADD EXERCISE
+              {t("prog.addExerciseButton")}
             </button>
           </Card>
         ))}
@@ -413,7 +415,7 @@ export function ProgramEditor({
           className="w-full flex items-center justify-center gap-2 py-4 border border-dashed border-[color:var(--border-visible)] hover:border-[color:var(--text-display)] font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--text-secondary)] hover:text-[color:var(--text-display)] transition-colors"
         >
           <Plus size={16} strokeWidth={1.5} />
-          ADD DAY
+          {t("prog.addDayButton")}
         </button>
       </div>
 

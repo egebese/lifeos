@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useDemoStore, generateId, DEMO_USER_ID } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 export function StartDayForm({
@@ -11,6 +12,7 @@ export function StartDayForm({
   programId: string;
   programDayId: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const { update } = useDemoStore();
 
@@ -36,7 +38,7 @@ export function StartDayForm({
 
   return (
     <Button onClick={start} variant="accent">
-      START DAY →
+      {t("work.startDay")}
     </Button>
   );
 }

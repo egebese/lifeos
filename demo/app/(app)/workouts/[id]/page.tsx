@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useDemoStore } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { WorkoutSession, type WorkoutExercise } from "./workout-session";
 import { WhoopStrainCard } from "@/components/workout/whoop-strain-card";
 
 export default function WorkoutDetail() {
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const t = useT();
   const { state } = useDemoStore();
 
   const w = state.workouts.find((x) => x.id === id);
@@ -16,9 +18,9 @@ export default function WorkoutDetail() {
   if (!w) {
     return (
       <div className="font-mono text-sm text-[color:var(--text-secondary)] py-12 text-center">
-        workout not found —{" "}
+        {t("work.workoutNotFound")}{" "}
         <Link href="/workouts" className="text-[color:var(--accent)]">
-          back
+          {t("common.backLower")}
         </Link>
       </div>
     );
@@ -91,7 +93,7 @@ export default function WorkoutDetail() {
             href="/workouts"
             className="mono-label hover:text-[color:var(--text-display)]"
           >
-            ← BACK
+            {t("work.back")}
           </Link>
           <h1 className="font-display text-3xl md:text-4xl mt-2">
             {new Date(w.startedAt).toLocaleString("en-US", {
@@ -105,7 +107,7 @@ export default function WorkoutDetail() {
         </div>
         <div className="text-right">
           <div className="mono-label">
-            {w.endedAt ? "COMPLETED" : "IN PROGRESS"}
+            {w.endedAt ? t("work.completed") : t("work.inProgress")}
           </div>
         </div>
       </header>

@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDemoStore, generateId, DEMO_USER_ID } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 
 type ProgramOpt = { id: string; name: string };
 
 export function NewWorkoutForm({ programs }: { programs: ProgramOpt[] }) {
+  const t = useT();
   const router = useRouter();
   const { update } = useDemoStore();
   const [programId, setProgramId] = useState<string>(programs[0]?.id ?? "");
@@ -38,7 +40,7 @@ export function NewWorkoutForm({ programs }: { programs: ProgramOpt[] }) {
   return (
     <div className="space-y-4 mt-2">
       <Select value={programId} onChange={(e) => setProgramId(e.target.value)}>
-        <option value="">— free / no program —</option>
+        <option value="">{t("common.freeNoProgram")}</option>
         {programs.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
@@ -47,7 +49,7 @@ export function NewWorkoutForm({ programs }: { programs: ProgramOpt[] }) {
       </Select>
       <div className="flex justify-end">
         <Button onClick={start} disabled={busy} variant="accent">
-          {busy ? "…" : "START →"}
+          {busy ? t("common.busy") : t("common.startButton")}
         </Button>
       </div>
     </div>

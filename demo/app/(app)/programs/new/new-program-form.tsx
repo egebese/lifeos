@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDemoStore, generateId, DEMO_USER_ID } from "@/lib/demo/store";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function NewProgramForm() {
+  const t = useT();
   const router = useRouter();
   const { update } = useDemoStore();
   const [name, setName] = useState("");
@@ -41,11 +43,11 @@ export function NewProgramForm() {
   return (
     <form onSubmit={submit} className="space-y-5">
       <div>
-        <div className="mono-label mb-1">NAME</div>
+        <div className="mono-label mb-1">{t("prog.nameLabel")}</div>
         <Input value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
       <div>
-        <div className="mono-label mb-1">DESCRIPTION</div>
+        <div className="mono-label mb-1">{t("prog.descriptionLabel")}</div>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -55,7 +57,7 @@ export function NewProgramForm() {
       </div>
       <div className="flex justify-end">
         <Button type="submit" disabled={busy}>
-          {busy ? "…" : "CREATE →"}
+          {busy ? t("common.busy") : t("common.createButton")}
         </Button>
       </div>
     </form>

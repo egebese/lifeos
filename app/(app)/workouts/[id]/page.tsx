@@ -8,6 +8,7 @@ import {
   workoutSets,
 } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
+import { getLocale, tFor } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { WorkoutSession, type WorkoutExercise } from "./workout-session";
 import { WhoopStrainCard } from "@/components/workout/whoop-strain-card";
@@ -20,6 +21,7 @@ export default async function WorkoutDetail({
   params: Promise<{ id: string }>;
 }) {
   const { user } = await requireSession();
+  const t = tFor(await getLocale());
   const { id } = await params;
 
   const [w] = await db.select().from(workouts).where(eq(workouts.id, id)).limit(1);
@@ -121,7 +123,7 @@ export default async function WorkoutDetail({
             href="/workouts"
             className="mono-label hover:text-[color:var(--text-display)]"
           >
-            ← BACK
+            {t("work.back")}
           </Link>
           <h1 className="font-display text-3xl md:text-4xl mt-2">
             {new Date(w.startedAt).toLocaleString("en-US", {
@@ -135,7 +137,7 @@ export default async function WorkoutDetail({
         </div>
         <div className="text-right">
           <div className="mono-label">
-            {w.endedAt ? "COMPLETED" : "IN PROGRESS"}
+            {w.endedAt ? t("work.completed") : t("work.inProgress")}
           </div>
         </div>
       </header>
