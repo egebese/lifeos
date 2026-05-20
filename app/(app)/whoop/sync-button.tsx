@@ -51,6 +51,14 @@ export function SyncWhoopButton() {
     <div className="flex flex-col items-end gap-2">
       <div className="flex items-center gap-2">
         <Button
+          onClick={() => sync(1)}
+          disabled={busy !== null}
+          variant="accent"
+          size="sm"
+        >
+          {busy === 1 ? "SYNCING…" : "SYNC TODAY"}
+        </Button>
+        <Button
           onClick={() => sync(30)}
           disabled={busy !== null}
           variant="outline"
