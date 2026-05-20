@@ -12,6 +12,7 @@ const Body = z.object({
   carbs_g: z.number().nullable().optional(),
   fat_g: z.number().nullable().optional(),
   photoPath: z.string().nullable().optional(),
+  consumedAt: z.string().datetime().optional(),
 });
 
 function n(v: number | null | undefined): string | null {
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       fatG: n(v.fat_g),
       photoPath: v.photoPath ?? null,
       source: v.photoPath ? "ai_photo" : "manual",
+      ...(v.consumedAt ? { consumedAt: new Date(v.consumedAt) } : {}),
     })
     .returning({ id: foodEntries.id });
   return NextResponse.json({ id: row.id });

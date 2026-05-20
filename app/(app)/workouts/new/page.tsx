@@ -4,15 +4,23 @@ import { programs } from "@/lib/db/schema";
 import { requireSession } from "@/lib/auth/session";
 import { Card, CardLabel } from "@/components/ui/card";
 import { NewWorkoutForm } from "./new-workout-form";
+import { todayKey } from "@/lib/utils/day";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewWorkoutPage() {
+export default async function NewWorkoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ day?: string }>;
+}) {
   const { user } = await requireSession();
+  const sp = await searchParams;
   const progs = await db
     .select()
     .from(programs)
     .where(or(eq(programs.userId, user.id), isNull(programs.userId)));
+  const initialDate =
+    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : todayKey();
 
   return (
     <div className="space-y-6">
@@ -22,7 +30,7 @@ export default async function NewWorkoutPage() {
       </header>
       <Card>
         <CardLabel>PROGRAM</CardLabel>
-        <NewWorkoutForm programs={progs} />
+        <NewWorkoutForm programs={progs} initialDate={initialDate} />
       </Card>
     </div>
   );

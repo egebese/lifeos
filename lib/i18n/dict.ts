@@ -58,6 +58,7 @@ const en = {
   "common.loading": "LOADING…",
   "common.saving": "SAVING…",
   "common.busy": "…",
+  "common.date": "DATE",
 
   // ---- Meal slots
   "meal.breakfast": "BREAKFAST",
@@ -453,6 +454,7 @@ const tr: Record<DictKey, string> = {
   "common.loading": "YÜKLENİYOR…",
   "common.saving": "KAYDEDİLİYOR…",
   "common.busy": "…",
+  "common.date": "TARİH",
 
   // ---- Meal slots
   "meal.breakfast": "KAHVALTI",

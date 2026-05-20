@@ -7,6 +7,7 @@ import { workouts } from "@/lib/db/schema";
 const Body = z.object({
   programId: z.string().uuid().nullable().optional(),
   programDayId: z.string().uuid().nullable().optional(),
+  startedAt: z.string().datetime().optional(),
 });
 
 export async function POST(req: Request) {
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
       userId: user.id,
       programId: parsed.data.programId ?? null,
       programDayId: parsed.data.programDayId ?? null,
+      ...(parsed.data.startedAt ? { startedAt: new Date(parsed.data.startedAt) } : {}),
     })
     .returning({ id: workouts.id });
   return NextResponse.json({ id: w.id });

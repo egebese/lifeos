@@ -21,15 +21,9 @@ import { Button } from "@/components/ui/button";
 import { MacroBar } from "@/components/food/macro-bar";
 import { MonoStat } from "@/components/nothing/mono-stat";
 import { DayNav } from "@/components/dashboard/day-nav";
+import { todayKey } from "@/lib/utils/day";
 
 export const dynamic = "force-dynamic";
-
-function ymdLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-}
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 const MEAL_ORDER: Meal[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -49,16 +43,16 @@ export default async function FoodPage({
   const sp = await searchParams;
   const locale = await getLocale();
   const t = tFor(locale);
-  const todayKey = ymdLocal(new Date());
+  const today = todayKey();
   const selectedKey =
-    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : todayKey;
-  const isToday = selectedKey === todayKey;
+    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : today;
+  const isToday = selectedKey === today;
 
   const dayStart = new Date(`${selectedKey}T00:00:00`);
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
 
-  const today = await db
+  const entries = await db
     .select()
     .from(foodEntries)
     .where(
@@ -70,14 +64,14 @@ export default async function FoodPage({
     )
     .orderBy(asc(foodEntries.consumedAt));
 
-  const kcal = today.reduce((a, e) => a + Number(e.kcal ?? 0), 0);
-  const p = today.reduce((a, e) => a + Number(e.proteinG ?? 0), 0);
-  const c = today.reduce((a, e) => a + Number(e.carbsG ?? 0), 0);
-  const f = today.reduce((a, e) => a + Number(e.fatG ?? 0), 0);
+  const kcal = entries.reduce((a, e) => a + Number(e.kcal ?? 0), 0);
+  const p = entries.reduce((a, e) => a + Number(e.proteinG ?? 0), 0);
+  const c = entries.reduce((a, e) => a + Number(e.carbsG ?? 0), 0);
+  const f = entries.reduce((a, e) => a + Number(e.fatG ?? 0), 0);
 
-  const byMeal = new Map<Meal, typeof today>();
+  const byMeal = new Map<Meal, typeof entries>();
   for (const m of MEAL_ORDER) byMeal.set(m, []);
-  for (const e of today) {
+  for (const e of entries) {
     const m = (e.meal as Meal) ?? "snack";
     byMeal.get(m)?.push(e);
   }
@@ -110,8 +104,8 @@ export default async function FoodPage({
           <h1 className="font-display text-4xl mt-1 truncate">{dayTitle}</h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <DayNav selected={selectedKey} today={todayKey} basePath="/food" />
-          <Link href="/food/new">
+          <DayNav selected={selectedKey} today={today} basePath="/food" />
+          <Link href={isToday ? "/food/new" : `/food/new?day=${selectedKey}`}>
             <Button>{t("food.log")}</Button>
           </Link>
         </div>
@@ -151,11 +145,14 @@ export default async function FoodPage({
       </Card>
 
       <section className="space-y-5">
-        {today.length === 0 ? (
+        {entries.length === 0 ? (
           <Card>
             <div className="font-mono text-sm text-[color:var(--text-secondary)] py-6 text-center">
               {t("food.noEntries")}{" "}
-              <Link href="/food/new" className="text-[color:var(--accent)]">
+              <Link
+                href={isToday ? "/food/new" : `/food/new?day=${selectedKey}`}
+                className="text-[color:var(--accent)]"
+              >
                 {t("food.addOne")}
               </Link>
             </div>

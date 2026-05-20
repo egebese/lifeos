@@ -9,6 +9,7 @@ import { PhotoDrop } from "@/components/food/photo-drop";
 import { FoodNameAutocomplete } from "@/components/food/name-autocomplete";
 import type { FoodSuggestion } from "@/app/api/food/suggest/route";
 import { useT } from "@/lib/i18n/client";
+import { isoForDate, todayKey } from "@/lib/utils/day";
 
 type EstimateResult = {
   name: string;
@@ -19,9 +20,11 @@ type EstimateResult = {
   notes?: string;
 };
 
-export function NewFoodForm() {
+export function NewFoodForm({ initialDate }: { initialDate?: string } = {}) {
   const router = useRouter();
   const t = useT();
+  const today = todayKey();
+  const [date, setDate] = useState<string>(initialDate ?? today);
   const [meal, setMeal] = useState<"breakfast" | "lunch" | "dinner" | "snack">("snack");
   const [name, setName] = useState("");
   const [kcal, setKcal] = useState("");
@@ -81,9 +84,10 @@ export function NewFoodForm() {
           carbs_g: c ? Number(c) : null,
           fat_g: f ? Number(f) : null,
           photoPath,
+          consumedAt: isoForDate(date),
         }),
       });
-      if (r.ok) router.push("/food");
+      if (r.ok) router.push(date === today ? "/food" : `/food?day=${date}`);
     } finally {
       setBusy(false);
     }
@@ -102,6 +106,20 @@ export function NewFoodForm() {
             <option value="dinner">{t("meal.dinnerLower")}</option>
             <option value="snack">{t("meal.snackLower")}</option>
           </Select>
+        </div>
+        <div>
+          <div className="mono-label mb-1">
+            {t("common.date")}
+            {date !== today && (
+              <span className="ml-2 text-[color:var(--accent)]">· {t("dash.viewing")}</span>
+            )}
+          </div>
+          <Input
+            type="date"
+            value={date}
+            max={today}
+            onChange={(e) => setDate(e.target.value || today)}
+          />
         </div>
         <div className="col-span-2">
           <div className="mono-label mb-1">{t("food.name")}</div>

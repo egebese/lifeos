@@ -4,9 +4,11 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mic, Sparkles, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { HistoryMatchHint } from "@/components/food/history-match-hint";
 import { useT } from "@/lib/i18n/client";
+import { isoForDate, todayKey } from "@/lib/utils/day";
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -29,9 +31,11 @@ type ParseResult = {
 
 const MEAL_OPTIONS: Meal[] = ["breakfast", "lunch", "dinner", "snack"];
 
-export function AiMealForm() {
+export function AiMealForm({ initialDate }: { initialDate?: string } = {}) {
   const router = useRouter();
   const t = useT();
+  const today = todayKey();
+  const [date, setDate] = useState<string>(initialDate ?? today);
   const [defaultMeal, setDefaultMeal] = useState<Meal>("breakfast");
   const [text, setText] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -179,6 +183,7 @@ export function AiMealForm() {
     setError(null);
     setStatus("→ saving…");
     try {
+      const consumedAt = isoForDate(date);
       for (const it of result.items) {
         const r = await fetch("/api/food", {
           method: "POST",
@@ -190,6 +195,7 @@ export function AiMealForm() {
             protein_g: Number(it.protein_g.toFixed(1)),
             carbs_g: Number(it.carbs_g.toFixed(1)),
             fat_g: Number(it.fat_g.toFixed(1)),
+            consumedAt,
           }),
         });
         if (!r.ok) {
@@ -197,7 +203,7 @@ export function AiMealForm() {
           throw new Error(j?.error ?? `http_${r.status}`);
         }
       }
-      router.push("/food");
+      router.push(date === today ? "/food" : `/food?day=${date}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -228,7 +234,7 @@ export function AiMealForm() {
         <div className="mono-label">{t("food.aiAutolog")}</div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[200px_200px_1fr] gap-4">
         <div>
           <div className="mono-label mb-1">{t("food.defaultMeal")}</div>
           <Select
@@ -241,6 +247,20 @@ export function AiMealForm() {
               </option>
             ))}
           </Select>
+        </div>
+        <div>
+          <div className="mono-label mb-1">
+            {t("common.date")}
+            {date !== today && (
+              <span className="ml-2 text-[color:var(--accent)]">· {t("dash.viewing")}</span>
+            )}
+          </div>
+          <Input
+            type="date"
+            value={date}
+            max={today}
+            onChange={(e) => setDate(e.target.value || today)}
+          />
         </div>
         <div>
           <div className="mono-label mb-1">{t("food.describe")}</div>

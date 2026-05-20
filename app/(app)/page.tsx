@@ -31,6 +31,7 @@ import { DayNav } from "@/components/dashboard/day-nav";
 import { bmi, bmr, macroSplit, recommendedKcal, tdee } from "@/lib/nutrition";
 import { getMeasuredTdee } from "@/lib/whoop/tdee";
 import { formatKg, greetingFor, resolveDisplayName } from "@/lib/utils";
+import { todayKey } from "@/lib/utils/day";
 import { getLocale, tFor } from "@/lib/i18n/server";
 
 function formatDayShort(dateStr: string): string {
@@ -38,13 +39,6 @@ function formatDayShort(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
   if (Number.isNaN(+d)) return dateStr;
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "short" }).toUpperCase();
-}
-
-function ymdLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
 }
 
 export const dynamic = "force-dynamic";
@@ -58,10 +52,10 @@ export default async function Dashboard({
   const sp = await searchParams;
   const locale = await getLocale();
   const t = tFor(locale);
-  const todayKey = ymdLocal(new Date());
+  const today = todayKey();
   const selectedKey =
-    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : todayKey;
-  const isToday = selectedKey === todayKey;
+    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : today;
+  const isToday = selectedKey === today;
 
   const dayStart = new Date(`${selectedKey}T00:00:00`);
   const dayEnd = new Date(dayStart);
@@ -199,7 +193,7 @@ export default async function Dashboard({
             { label: t("dash.goal"), value: t(goalLabelKey) },
           ]}
         />
-        <DayNav selected={selectedKey} today={todayKey} />
+        <DayNav selected={selectedKey} today={today} />
       </div>
 
       <section

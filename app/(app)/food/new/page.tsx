@@ -4,9 +4,24 @@ import { AiMealForm } from "./ai-meal-form";
 import { NewFoodForm } from "./new-food-form";
 import { getLocale, tFor } from "@/lib/i18n/server";
 
-export default async function NewFoodPage() {
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+export default async function NewFoodPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ day?: string }>;
+}) {
   await requireSession();
+  const sp = await searchParams;
   const t = tFor(await getLocale());
+  const todayKey = ymdLocal(new Date());
+  const initialDate =
+    sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) ? sp.day : todayKey;
   return (
     <div className="space-y-6">
       <header>
@@ -15,7 +30,7 @@ export default async function NewFoodPage() {
       </header>
 
       <Card>
-        <AiMealForm />
+        <AiMealForm initialDate={initialDate} />
       </Card>
 
       <div className="flex items-center gap-3">
@@ -26,7 +41,7 @@ export default async function NewFoodPage() {
 
       <Card>
         <CardLabel>{t("food.singleItem")}</CardLabel>
-        <NewFoodForm />
+        <NewFoodForm initialDate={initialDate} />
       </Card>
     </div>
   );
