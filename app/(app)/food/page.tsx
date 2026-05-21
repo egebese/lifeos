@@ -179,30 +179,33 @@ export default async function FoodPage({
                 </div>
                 <ul>
                   {items.map((e) => (
-                    <li
-                      key={e.id}
-                      className="grid grid-cols-[1fr_auto] gap-3 py-3 border-b border-[color:var(--border)] last:border-0"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-body text-[color:var(--text-display)] truncate">
-                          {e.name}
+                    <li key={e.id} className="border-b border-[color:var(--border)] last:border-0">
+                      <Link
+                        href={`/food/${e.id}/edit`}
+                        className="grid grid-cols-[1fr_auto] gap-3 py-3 hover:bg-[color:var(--surface)] -mx-2 px-2"
+                        aria-label={t("food.edit")}
+                      >
+                        <div className="min-w-0">
+                          <div className="font-body text-[color:var(--text-display)] truncate">
+                            {e.name}
+                          </div>
+                          <div className="font-mono text-[10px] text-[color:var(--text-secondary)] mt-1 tabular-nums">
+                            P{Math.round(Number(e.proteinG ?? 0))} · C{Math.round(Number(e.carbsG ?? 0))} · F{Math.round(Number(e.fatG ?? 0))}
+                            <span className="text-[color:var(--text-disabled)] ml-2">
+                              {new Date(e.consumedAt).toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
                         </div>
-                        <div className="font-mono text-[10px] text-[color:var(--text-secondary)] mt-1 tabular-nums">
-                          P{Math.round(Number(e.proteinG ?? 0))} · C{Math.round(Number(e.carbsG ?? 0))} · F{Math.round(Number(e.fatG ?? 0))}
-                          <span className="text-[color:var(--text-disabled)] ml-2">
-                            {new Date(e.consumedAt).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
+                        <div className="text-right">
+                          <div className="font-mono text-xl text-[color:var(--text-display)] tabular-nums">
+                            {Math.round(Number(e.kcal ?? 0))}
+                          </div>
+                          <div className="mono-label">KCAL</div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-mono text-xl text-[color:var(--text-display)] tabular-nums">
-                          {Math.round(Number(e.kcal ?? 0))}
-                        </div>
-                        <div className="mono-label">KCAL</div>
-                      </div>
+                      </Link>
                     </li>
                   ))}
                 </ul>

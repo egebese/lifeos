@@ -137,6 +137,14 @@ const en = {
   "food.fromHistorySkipAi": "FROM YOUR HISTORY · SKIP AI",
   "food.fromHistory": "FROM HISTORY",
   "food.matchKcalUse": "MATCH · {kcal} KCAL · USE →",
+  "food.editEntry": "EDIT ENTRY",
+  "food.editTitle": "edit meal",
+  "food.aiReestimate": "AI · RE-ESTIMATE",
+  "food.aiReestimatePlaceholder": "describe what you actually ate, e.g. \"actually it was 2 slices, not 1\" or \"add half avocado\"",
+  "food.aiThinking": "→ thinking…",
+  "food.aiUpdated": "OK · fields updated. review and SAVE.",
+  "food.confirmDelete": "Delete this entry?",
+  "food.edit": "EDIT",
 
   // ---- Plan
   "plan.title": "diet plan",
@@ -533,6 +541,14 @@ const tr: Record<DictKey, string> = {
   "food.fromHistorySkipAi": "GEÇMİŞTEN · AI'I ATLA",
   "food.fromHistory": "GEÇMİŞTEN",
   "food.matchKcalUse": "EŞLEŞME · {kcal} KCAL · KULLAN →",
+  "food.editEntry": "GİRİŞİ DÜZENLE",
+  "food.editTitle": "öğünü düzenle",
+  "food.aiReestimate": "AI · YENİDEN HESAPLA",
+  "food.aiReestimatePlaceholder": "ne yediğini tarif et, örn. \"aslında 2 dilimdi, 1 değil\" veya \"yarım avokado ekle\"",
+  "food.aiThinking": "→ düşünüyor…",
+  "food.aiUpdated": "OK · alanlar güncellendi. kontrol et ve KAYDET.",
+  "food.confirmDelete": "Bu girişi silmek istiyor musun?",
+  "food.edit": "DÜZENLE",
 
   // ---- Plan
   "plan.title": "diyet planı",
