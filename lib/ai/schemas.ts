@@ -107,7 +107,14 @@ export const MealLogItemSchema = z.object({
   protein_g: z.number().nonnegative(),
   carbs_g: z.number().nonnegative(),
   fat_g: z.number().nonnegative(),
-  notes: z.string().max(240).optional(),
+  // Models occasionally return long, chatty notes (especially with web search
+  // enabled). Accept up to ~4KB and truncate to 240 for storage rather than
+  // rejecting the whole parse.
+  notes: z
+    .string()
+    .max(4000)
+    .optional()
+    .transform((s) => (s ? s.slice(0, 240) : s)),
 });
 
 export const MealLogSchema = z.object({
