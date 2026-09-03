@@ -1,0 +1,14 @@
+[Unit]
+Description=LifeOS ASR HTTP bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=@CONFIG_FILE@
+ExecStart=@ASR_PYTHON@ @LIFEOS_DIR@/infra/asr-http/server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
