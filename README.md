@@ -41,20 +41,20 @@ Local Qwen vision and NeMo/Wyoming speech services power the AI features; no ext
 
 LifeOS is the self-hosted personal OS I built for myself: log every workout, every meal, every Whoop recovery score, and let local AI handle the smart parts (photo-to-calories, meal planning, weekly insights, voice-to-meal transcription, and workout program generation).
 
-It is intentionally **single-admin**: one user, one Postgres database, one Docker container, and local AI services on the LAN. Deploy it on `192.168.2.61:3000` and keep your fitness/nutrition data on your network. MIT licensed.
+It is intentionally **single-admin**: one user, one Postgres database, one Docker container, and local AI services on the LAN. Keep your fitness/nutrition data on your own network. MIT licensed.
 
 > The project is internally called `lifetracker` (package name, docker volumes, db name). The public/repo name is **LifeOS**.
 
 ## Local AI services
 
-LifeOS uses these existing LAN services:
+LifeOS connects to user-hosted local providers configured in
+`deploy/config.env`. It needs an OpenAI-compatible llama.cpp server for text
+and vision plus the included token-protected HTTP bridge in front of any
+Wyoming-compatible English STT server. TTS can be recorded in the config for
+future spoken-output clients; the current LifeOS UI does not call TTS.
 
-| Surface | Service | Purpose |
-|---|---|---|
-| Food photo, meal parsing, plans, programs, insights | Preloaded Qwen vision llama.cpp at `http://192.168.2.11:8081/v1` | OpenAI-compatible text and vision requests |
-| Voice → meal log | Token-protected HTTP bridge at `http://192.168.2.61:10202` | Forwards audio to the existing NeMo/Wyoming ASR service at `192.168.2.61:10300` |
-
-The configured llama.cpp model id is `/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf`. Existing TTS at `192.168.2.61:10201` is separate; LifeOS does not start, reconfigure, or require it. No external AI API key is needed.
+No external AI API key is needed, and the installer does not download model
+weights or replace provider runtimes.
 
 Meal-text parsing performs at most one DuckDuckGo HTML search (up to five
 results and 6,000 characters). Results are marked as untrusted reference
@@ -92,9 +92,9 @@ cp .env.example .env
 ### Option A — full Docker stack (fastest)
 
 ```bash
-docker compose up --build
+docker compose --env-file .env up --build
 # → migrate → bootstrap admin → seed 1,324 exercises → seed templates → next start
-# Open http://192.168.2.61:3000  ·  login with ADMIN_EMAIL / ADMIN_PASSWORD
+# Open NEXT_PUBLIC_APP_URL · login with ADMIN_EMAIL / ADMIN_PASSWORD
 ```
 
 ### Option B — dev mode (hot reload)
@@ -116,17 +116,19 @@ pnpm dev                         # http://localhost:3000
 | `SESSION_SECRET` | ✅ | 64-byte base64 (`openssl rand -base64 64`) for `iron-session` |
 | `ADMIN_EMAIL` | ✅ | Bootstraps the single admin account on first boot |
 | `ADMIN_PASSWORD` | ✅ | First-boot password; rotate it from `/profile` immediately after first login |
-| `LLAMA_CPP_BASE_URL` | ✅ (deployment) | Preloaded llama.cpp API: `http://192.168.2.11:8081/v1` |
-| `LLAMA_CPP_MODEL` | ✅ (deployment) | Exact Qwen model id: `/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf` |
-| `ASR_HTTP_URL` | ✅ (deployment) | ASR bridge: `http://192.168.2.61:10202` |
+| `LIFEOS_VOLUME_PREFIX` | ✅ (deployment) | Stable prefix for named Postgres/uploads volumes; do not change after install |
+| `LLAMA_CPP_BASE_URL` | ✅ (deployment) | OpenAI-compatible llama.cpp `/v1` URL |
+| `LLAMA_CPP_MODEL` | ✅ (deployment) | Exact model id returned by llama.cpp `/v1/models`; must advertise `multimodal` |
+| `ASR_HTTP_URL` | ✅ (deployment) | Token-protected ASR bridge URL |
 | `ASR_HTTP_TOKEN` | ✅ | Shared secret for the ASR HTTP bridge; keep it out of Git and logs |
+| `TTS_BASE_URL` | optional | User-hosted TTS URL; informational until LifeOS adds speech output |
 | `WHOOP_CLIENT_ID` | optional | From [developer.whoop.com](https://developer.whoop.com) |
 | `WHOOP_CLIENT_SECRET` | optional | OAuth client secret |
 | `WHOOP_REDIRECT_URI` | optional | `https://yourdomain.com/api/whoop/callback` |
 | `WHOOP_WEBHOOK_SECRET` | optional | Only if you set a custom webhook secret in the Whoop portal |
-| `NEXT_PUBLIC_APP_URL` | ✅ (deployment) | Public origin; use `http://192.168.2.61:3000` for this deployment |
+| `NEXT_PUBLIC_APP_URL` | ✅ (deployment) | Browser-visible public origin |
 | `ENABLE_CRON` | optional | `1` to enable background jobs in the Node process |
-| `TZ` | optional | Defaults to `Europe/Istanbul`; set yours |
+| `TZ` | optional | Defaults to `UTC`; set yours |
 | `UPLOADS_DIR` | optional | Defaults to `./uploads` locally, `/data/uploads` in Docker |
 
 ## Architecture
@@ -151,47 +153,28 @@ pnpm dev                         # http://localhost:3000
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Deploy on `192.168.2.61`
+## Deploy with configurable local AI
 
-1. Copy `.env.example` to `.env`, generate a random `SESSION_SECRET`, set a non-default `ADMIN_PASSWORD`, and keep the example values for `LLAMA_CPP_BASE_URL`, `LLAMA_CPP_MODEL`, `ASR_HTTP_URL`, and `NEXT_PUBLIC_APP_URL`. This plain-HTTP LAN deployment uses `SESSION_COOKIE_SECURE=false`; set it to `true` when HTTPS terminates in front of LifeOS.
-2. Install ffmpeg on the host: `sudo apt-get install -y ffmpeg`.
-3. Install and enable the bridge as a user service:
-
-   ```bash
-   cd "$HOME/lifeos"
-   loginctl enable-linger "$USER"
-   mkdir -p "$HOME/.config/systemd/user"
-   cp infra/asr-http/lifeos-asr-http.service "$HOME/.config/systemd/user/"
-   umask 077
-   token="$(openssl rand -hex 32)"
-   printf 'ASR_HTTP_TOKEN=%s\n' "$token" > "$HOME/lifeos/asr-http.env"
-   sed -i "s/^ASR_HTTP_TOKEN=.*/ASR_HTTP_TOKEN=$token/" .env
-   unset token
-   chmod 600 "$HOME/lifeos/asr-http.env" .env
-   systemctl --user daemon-reload
-   systemctl --user enable --now lifeos-asr-http.service
-   ```
-4. Confirm the preloaded Qwen service is reachable at `192.168.2.11:8081` and the bridge can reach NeMo/Wyoming at `192.168.2.61:10300`:
-
-   ```bash
-   curl -fsS http://192.168.2.11:8081/v1/models
-   command -v ffmpeg
-   systemctl --user is-active lifeos-asr-http.service
-   ```
-
-5. Run `docker compose up -d --build`. The Compose stack keeps Postgres data in `lt_pg`, uploads in `lt_uploads` mounted at `/data/uploads`, and the web app on port `3000`.
-6. Open `http://192.168.2.61:3000`, log in with `ADMIN_EMAIL` and the first-boot `ADMIN_PASSWORD`, then rotate the password from `/profile` immediately.
-7. For Whoop's daily safety-net sync, set `ENABLE_CRON=1`; keep `TZ=Europe/Istanbul` or set the deployment's IANA timezone. Configure the existing `WHOOP_*` variables only if Whoop is enabled.
-
-The bridge and the existing TTS service at `192.168.2.61:10201` are host services, not Compose services. LifeOS does not restart or reconfigure them. No external AI API key is needed.
-
-After provisioning the bridge, verify it without exposing the token:
+Use the reusable package in [`deploy/README.md`](deploy/README.md):
 
 ```bash
-command -v ffmpeg
-systemctl --user is-enabled lifeos-asr-http.service
-curl -fsS -H "X-ASR-Token: $ASR_HTTP_TOKEN" http://192.168.2.61:10202/health
+cp deploy/config.env.example "$HOME/.config/lifeos.env"
+chmod 600 "$HOME/.config/lifeos.env"
+# Edit the URLs, exact model id, local ASR Python path, credentials, and ports.
+./deploy/install.sh "$HOME/.config/lifeos.env"
 ```
+
+The installer keeps the private config outside the checkout, renders the
+ASR bridge user service, validates the Compose file, and starts LifeOS. It
+does not stop or reconfigure existing llama.cpp, STT, or TTS processes. For
+updates, update the checkout and rerun:
+
+```bash
+./deploy/update.sh "$HOME/.config/lifeos.env"
+```
+
+The config and named volumes are preserved. Do not run `docker compose down
+-v`; that deletes the database and uploads volumes.
 
 ## Tech
 

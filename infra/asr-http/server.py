@@ -9,6 +9,7 @@ import threading
 import time
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse
 
 from wyoming.asr import Transcribe, Transcript
 from wyoming.audio import AudioStart, AudioStop, wav_to_chunks
@@ -16,11 +17,10 @@ from wyoming.client import AsyncClient
 from wyoming.error import Error
 
 
-BIND_HOST = "0.0.0.0"
-BIND_PORT = 10202
-WYOMING_HOST = "127.0.0.1"
-WYOMING_PORT = 10300
-WYOMING_URI = f"tcp://{WYOMING_HOST}:{WYOMING_PORT}"
+DEFAULT_BIND_HOST = "127.0.0.1"
+DEFAULT_BIND_PORT = 10202
+DEFAULT_WYOMING_URI = "tcp://127.0.0.1:10300"
+DEFAULT_FFMPEG_BIN = "ffmpeg"
 MAX_UPLOAD = 15 * 1024 * 1024
 HEALTH_TIMEOUT = 2.0
 TRANSCRIPTION_TIMEOUT = 45.0
@@ -29,6 +29,20 @@ MAX_AUDIO_SECONDS = 60
 MAX_DECODED_WAV_BYTES = 2_000_000
 TRANSCRIPTION_SLOTS = threading.BoundedSemaphore(2)
 HTTP_HEADER_TIMEOUT = 10.0
+
+
+def bridge_settings():
+    wyoming_uri = os.environ.get("WYOMING_URI", DEFAULT_WYOMING_URI)
+    parsed = urlparse(wyoming_uri)
+    if parsed.scheme != "tcp" or not parsed.hostname or parsed.port is None:
+        raise ValueError("WYOMING_URI must be a tcp://host:port URI")
+    return {
+        "bind_host": os.environ.get("ASR_HTTP_HOST", DEFAULT_BIND_HOST),
+        "bind_port": int(os.environ.get("ASR_HTTP_PORT", DEFAULT_BIND_PORT)),
+        "wyoming_uri": wyoming_uri,
+        "wyoming_address": (parsed.hostname, parsed.port),
+        "ffmpeg_bin": os.environ.get("FFMPEG_BIN", DEFAULT_FFMPEG_BIN),
+    }
 
 
 class UnsupportedAudio(Exception):
@@ -77,8 +91,8 @@ def _remaining(deadline):
     return remaining
 
 
-def _convert_audio(body, content_type, deadline):
-    command = ["ffmpeg", "-nostdin", "-loglevel", "error"]
+def _convert_audio(body, content_type, deadline, ffmpeg_bin=None):
+    command = [ffmpeg_bin or os.environ.get("FFMPEG_BIN", DEFAULT_FFMPEG_BIN), "-nostdin", "-loglevel", "error"]
     input_format = _input_format(content_type)
     if input_format:
         command.extend(("-f", input_format))
@@ -122,10 +136,10 @@ def _convert_audio(body, content_type, deadline):
     return result.stdout
 
 
-async def _transcribe(wav_data):
+async def _transcribe(wav_data, wyoming_uri):
     connected = False
     try:
-        client = AsyncClient.from_uri(WYOMING_URI)
+        client = AsyncClient.from_uri(wyoming_uri)
         try:
             async with client:
                 connected = True
@@ -158,10 +172,10 @@ async def _transcribe(wav_data):
         raise BridgeUnavailable from exc
 
 
-def _transcribe_with_timeout(wav_data, deadline):
+def _transcribe_with_timeout(wav_data, deadline, wyoming_uri):
     try:
         return asyncio.run(
-            asyncio.wait_for(_transcribe(wav_data), timeout=_remaining(deadline))
+            asyncio.wait_for(_transcribe(wav_data, wyoming_uri), timeout=_remaining(deadline))
         )
     except asyncio.TimeoutError as exc:
         raise TranscriptionTimeout from exc
@@ -229,8 +243,9 @@ class ASRHandler(BaseHTTPRequestHandler):
 
     def _health(self):
         try:
+            settings = bridge_settings()
             connection = socket.create_connection(
-                (WYOMING_HOST, WYOMING_PORT), timeout=HEALTH_TIMEOUT
+                settings["wyoming_address"], timeout=HEALTH_TIMEOUT
             )
             connection.close()
         except OSError:
@@ -281,11 +296,12 @@ class ASRHandler(BaseHTTPRequestHandler):
             self._send_json(503, {"error": "wyoming_unavailable"})
             return
         try:
+            settings = bridge_settings()
             body = self._audio_body(deadline)
             if body is None:
                 return
-            wav_data = _convert_audio(body, content_type, deadline)
-            text = _transcribe_with_timeout(wav_data, deadline)
+            wav_data = _convert_audio(body, content_type, deadline, settings["ffmpeg_bin"])
+            text = _transcribe_with_timeout(wav_data, deadline, settings["wyoming_uri"])
         except UnsupportedAudio:
             self._send_json(415, {"error": "unsupported_audio"})
             return
@@ -355,7 +371,8 @@ class ASRHandler(BaseHTTPRequestHandler):
 
 
 def main():
-    httpd = ThreadingHTTPServer((BIND_HOST, BIND_PORT), ASRHandler)
+    settings = bridge_settings()
+    httpd = ThreadingHTTPServer((settings["bind_host"], settings["bind_port"]), ASRHandler)
     httpd.daemon_threads = True
     httpd.serve_forever()
 

@@ -18,6 +18,8 @@ services:
 
   web:
     build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     depends_on:
       db:
@@ -28,17 +30,18 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL for the first admin account}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD for the first admin account}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
-      LLAMA_CPP_BASE_URL: ${LLAMA_CPP_BASE_URL:-http://192.168.2.11:8081/v1}
-      LLAMA_CPP_MODEL: ${LLAMA_CPP_MODEL:?Set LLAMA_CPP_MODEL to the verified Qwen model id}
-      ASR_HTTP_URL: ${ASR_HTTP_URL:-http://192.168.2.61:10202}
+      LLAMA_CPP_BASE_URL: ${LLAMA_CPP_BASE_URL:?Set LLAMA_CPP_BASE_URL in the private config}
+      LLAMA_CPP_MODEL: ${LLAMA_CPP_MODEL:?Set LLAMA_CPP_MODEL in the private config}
+      ASR_HTTP_URL: ${ASR_HTTP_URL:?Set ASR_HTTP_URL in the private config}
       ASR_HTTP_TOKEN: ${ASR_HTTP_TOKEN:?Set ASR_HTTP_TOKEN to the bridge token}
+      TTS_BASE_URL: ${TTS_BASE_URL:-}
       WHOOP_CLIENT_ID: ${WHOOP_CLIENT_ID:-}
       WHOOP_CLIENT_SECRET: ${WHOOP_CLIENT_SECRET:-}
       WHOOP_REDIRECT_URI: ${WHOOP_REDIRECT_URI:-http://localhost:3000/api/whoop/callback}
       WHOOP_WEBHOOK_SECRET: ${WHOOP_WEBHOOK_SECRET:-}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://192.168.2.61:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set NEXT_PUBLIC_APP_URL in the private config}
       ENABLE_CRON: ${ENABLE_CRON:-0}
-      TZ: Europe/Istanbul
+      TZ: ${TZ:-UTC}
     ports:
       - "3000:3000"
     volumes:
@@ -46,4 +49,6 @@ services:
 
 volumes:
   lt_pg:
+    name: ${LIFEOS_VOLUME_PREFIX:-lifeos}_lt_pg
   lt_uploads:
+    name: ${LIFEOS_VOLUME_PREFIX:-lifeos}_lt_uploads

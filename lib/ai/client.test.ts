@@ -21,6 +21,7 @@ import {
 } from "./client.js";
 
 const MODEL = "/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf";
+const PORTABLE_MODEL = "my-local-vision-model";
 const originalFetch = globalThis.fetch;
 const originalDatabaseUrl = process.env.DATABASE_URL;
 
@@ -53,6 +54,7 @@ function sendJson(res: ServerResponse, body: unknown, status = 200) {
 async function withServer(
   handler: (req: IncomingMessage, res: ServerResponse, requests: RequestRecord[]) => void | Promise<void>,
   run: (baseUrl: string, requests: RequestRecord[]) => Promise<void>,
+  model = MODEL,
 ) {
   const requests: RequestRecord[] = [];
   const server = createServer(async (req, res) => {
@@ -65,7 +67,7 @@ async function withServer(
   if (!address || typeof address === "string") throw new Error("test server did not start");
   const baseUrl = `http://127.0.0.1:${address.port}/v1`;
   process.env.LLAMA_CPP_BASE_URL = baseUrl;
-  process.env.LLAMA_CPP_MODEL = MODEL;
+  process.env.LLAMA_CPP_MODEL = model;
   try {
     await run(baseUrl, requests);
   } finally {
@@ -73,10 +75,10 @@ async function withServer(
   }
 }
 
-function validModels() {
+function validModels(model = MODEL) {
   return {
-    data: [{ id: MODEL }],
-    models: [{ id: MODEL, model: MODEL, name: MODEL, capabilities: ["chat", "multimodal"] }],
+    data: [{ id: model }],
+    models: [{ id: model, model, name: model, capabilities: ["chat", "multimodal"] }],
   };
 }
 
@@ -124,6 +126,24 @@ test("chat validates the exact multimodal model once and sends OpenAI messages",
   );
 });
 
+test("accepts any exact configured multimodal model id", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels(PORTABLE_MODEL));
+      if (req.url === "/v1/chat/completions") return sendJson(res, chatResponse("portable"));
+      sendJson(res, { error: "not found" }, 404);
+    },
+    async () => {
+      assert.deepEqual(await chat({
+        userId: "u",
+        kind: "freeform",
+        prompt: "Say portable",
+      }), { text: "portable", raw: chatResponse("portable") });
+    },
+    PORTABLE_MODEL,
+  );
+});
+
 test("model validation has named errors for missing model and capability", async () => {
   await withServer(
     async (_req, res) => sendJson(res, { data: [{ id: "other" }], models: [] }),
@@ -146,21 +166,21 @@ test("model validation has named errors for missing model and capability", async
   );
 });
 
-test("rejects a configured model id that is not the verified model", async () => {
-  process.env.LLAMA_CPP_BASE_URL = "http://127.0.0.1:65531/v1";
-  process.env.LLAMA_CPP_MODEL = `${MODEL}-unverified`;
-  let fetchCalls = 0;
-  globalThis.fetch = async () => {
-    fetchCalls++;
-    throw new Error("the model list must not be requested");
-  };
-
-  await assert.rejects(
-    () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
-    (error: unknown) => error instanceof LocalAiMissingModelError && error.code === "local_ai_unavailable",
+test("rejects a configured model id that is not returned by the endpoint", async () => {
+  const unverifiedModel = `${MODEL}-unverified`;
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels(MODEL));
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof LocalAiMissingModelError && error.code === "local_ai_unavailable",
+      );
+    },
+    unverifiedModel,
   );
-  assert.equal(fetchCalls, 0);
-  process.env.LLAMA_CPP_MODEL = MODEL;
 });
 
 test("caches a failed model validation for the process lifetime", async () => {

@@ -6,6 +6,7 @@ import json
 import os
 import socket
 import threading
+import time
 import unittest
 import wave
 from pathlib import Path
@@ -202,6 +203,36 @@ class ServerTests(unittest.TestCase):
             status, body = self.request("GET", "/health")
         self.assertEqual(status, 503)
         self.assertEqual(body, {"error": "wyoming_unavailable"})
+
+    def test_bridge_settings_follow_environment(self):
+        with patch.dict(
+            os.environ,
+            {
+                "ASR_HTTP_HOST": "127.0.0.2",
+                "ASR_HTTP_PORT": "12002",
+                "WYOMING_URI": "tcp://127.0.0.3:12003",
+            },
+        ):
+            self.assertEqual(
+                self.module.bridge_settings(),
+                {
+                    "bind_host": "127.0.0.2",
+                    "bind_port": 12002,
+                    "wyoming_uri": "tcp://127.0.0.3:12003",
+                    "wyoming_address": ("127.0.0.3", 12003),
+                    "ffmpeg_bin": "ffmpeg",
+                },
+            )
+
+    def test_ffmpeg_binary_follows_environment(self):
+        ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
+        with patch.dict(os.environ, {"FFMPEG_BIN": "/opt/bin/ffmpeg"}), patch.object(
+            self.module.subprocess, "run", return_value=ffmpeg
+        ) as run:
+            self.module._convert_audio(
+                b"encoded audio", "audio/wav", time.monotonic() + 1
+            )
+        self.assertEqual(run.call_args.args[0][0], "/opt/bin/ffmpeg")
 
     def test_handler_setup_sets_fixed_header_timeout(self):
         connection = Mock()

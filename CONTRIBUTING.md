@@ -32,7 +32,8 @@ git clone https://github.com/egebese/lifeos.git
 cd lifeos
 
 cp .env.example .env
-# Fill in SESSION_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD, ASR_HTTP_TOKEN
+# Fill in the required values in `.env`; for a full local-AI deployment use
+# `deploy/config.env.example` and `deploy/install.sh`.
 
 docker compose up -d db
 pnpm install
@@ -42,7 +43,11 @@ pnpm seed:exercises
 pnpm dev
 ```
 
-The default `.env.example` points at the preloaded Qwen vision llama.cpp service and the local ASR HTTP bridge. Set `ASR_HTTP_TOKEN` to the bridge's token before testing voice features; no external AI API key is needed. AI calls are logged to the `ai_messages` table for troubleshooting and audit.
+The default `.env.example` uses generic local endpoints. Set the exact
+llama.cpp model id and `ASR_HTTP_TOKEN` before testing AI features; no
+external AI API key is needed. AI calls are logged to the `ai_messages` table
+for troubleshooting and audit. The portable deployment package and provider
+hosting guide are in [`deploy/README.md`](deploy/README.md).
 
 ## Code conventions
 
@@ -50,7 +55,7 @@ The default `.env.example` points at the preloaded Qwen vision llama.cpp service
 - **Server Components by default.** Drop to `"use client"` only when you need state, effects, or browser APIs.
 - **Drizzle for all DB access.** No raw SQL except in migrations.
 - **Zod schemas at API boundaries.** Look at `lib/ai/schemas.ts` for the pattern.
-- **No new env vars without a default + `.env.example` update.**
+- **No new env vars without a `.env.example` or deployment-config update.**
 - **AI calls go through `lib/ai/client.ts`.** Keep route handlers on the shared local llama.cpp/ASR client so errors and safe request metadata are recorded in `ai_messages`.
 - **Mobile-first.** Test at 375px width before desktop. Use the existing `components/nothing/*` primitives where possible.
 

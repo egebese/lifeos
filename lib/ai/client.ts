@@ -4,9 +4,9 @@ import { db } from "@/lib/db/client";
 import { aiMessages } from "@/lib/db/schema";
 import { searchWeb } from "@/lib/ai/web-search";
 
-const DEFAULT_BASE_URL = "http://192.168.2.11:8081/v1";
-const DEFAULT_MODEL = "/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf";
-const DEFAULT_ASR_URL = "http://192.168.2.61:10202";
+const DEFAULT_BASE_URL = "http://127.0.0.1:8080/v1";
+const DEFAULT_MODEL = "";
+const DEFAULT_ASR_URL = "http://127.0.0.1:10202";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export type LocalAiErrorCode =
@@ -103,7 +103,7 @@ function config(): ModelConfig {
   const configuredModel = process.env.LLAMA_CPP_MODEL;
   return {
     baseUrl: (process.env.LLAMA_CPP_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, ""),
-    model: configuredModel === undefined ? DEFAULT_MODEL : configuredModel,
+    model: configuredModel || DEFAULT_MODEL,
   };
 }
 
@@ -179,7 +179,7 @@ export function localAiRouteFailure(error: unknown): { status: 503 | 502; detail
 const validationCache = new Map<string, Promise<void>>();
 
 async function validateModel({ baseUrl, model }: ModelConfig): Promise<void> {
-  if (model !== DEFAULT_MODEL) throw new LocalAiMissingModelError();
+  if (!model) throw new LocalAiMissingModelError();
 
   let response: Response;
   try {
