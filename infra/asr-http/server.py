@@ -170,8 +170,35 @@ def _transcribe_with_timeout(wav_data, deadline):
 class ASRHandler(BaseHTTPRequestHandler):
     def setup(self):
         self._deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
-        super().setup()
-        self.connection.settimeout(min(HTTP_HEADER_TIMEOUT, _remaining(self._deadline)))
+        self._watchdog = threading.Timer(
+            TRANSCRIPTION_TIMEOUT, self._close_connection
+        )
+        self._watchdog.daemon = True
+        self._watchdog.start()
+        try:
+            super().setup()
+            self.connection.settimeout(
+                min(HTTP_HEADER_TIMEOUT, _remaining(self._deadline))
+            )
+        except Exception:
+            self._watchdog.cancel()
+            raise
+
+    def _close_connection(self):
+        try:
+            self.connection.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        try:
+            self.connection.close()
+        except OSError:
+            pass
+
+    def finish(self):
+        watchdog = getattr(self, "_watchdog", None)
+        if watchdog is not None:
+            watchdog.cancel()
+        super().finish()
 
     def log_message(self, format, *args):
         return

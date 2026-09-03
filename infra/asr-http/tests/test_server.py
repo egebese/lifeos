@@ -211,6 +211,27 @@ class ServerTests(unittest.TestCase):
             self.module.ASRHandler.setup(handler)
         connection.settimeout.assert_called_once_with(self.module.HTTP_HEADER_TIMEOUT)
 
+    def test_handler_watchdog_closes_connection_and_is_cancelled(self):
+        connection = Mock()
+        timer = Mock()
+        handler = object.__new__(self.module.ASRHandler)
+        handler.connection = connection
+        with patch.object(self.module.threading, "Timer", return_value=timer) as timer_factory, patch.object(
+            self.module.BaseHTTPRequestHandler, "setup"
+        ), patch.object(self.module.BaseHTTPRequestHandler, "finish"):
+            self.module.ASRHandler.setup(handler)
+
+            timer_factory.assert_called_once_with(
+                self.module.TRANSCRIPTION_TIMEOUT, unittest.mock.ANY
+            )
+            timer.start.assert_called_once_with()
+            timer_factory.call_args.args[1]()
+            self.module.ASRHandler.finish(handler)
+
+        connection.shutdown.assert_called_once_with(self.module.socket.SHUT_RDWR)
+        connection.close.assert_called_once_with()
+        timer.cancel.assert_called_once_with()
+
     def test_transcription_uses_setup_deadline_after_header_parsing(self):
         clock = FakeClock()
         connection = Mock()
@@ -385,8 +406,8 @@ class ServerTests(unittest.TestCase):
     def test_timeout_returns_504(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
         with patch.object(self.module, "TRANSCRIPTION_TIMEOUT", 0.01), patch.object(
-            self.module.subprocess, "run", return_value=ffmpeg
-        ), patch.object(
+            self.module.threading, "Timer", return_value=Mock()
+        ), patch.object(self.module.subprocess, "run", return_value=ffmpeg), patch.object(
             self.module.AsyncClient, "from_uri", return_value=TimeoutWyoming()
         ):
             status, body = self.request(
@@ -408,6 +429,8 @@ class ServerTests(unittest.TestCase):
             return ffmpeg
 
         with patch.object(self.module, "TRANSCRIPTION_TIMEOUT", 0.01), patch.object(
+            self.module.threading, "Timer", return_value=Mock()
+        ), patch.object(
             self.module, "time", SimpleNamespace(monotonic=clock.monotonic), create=True
         ), patch.object(
             self.module.subprocess, "run", side_effect=run_ffmpeg
@@ -483,8 +506,8 @@ class ServerTests(unittest.TestCase):
 
     def test_stalled_audio_body_hits_shared_deadline(self):
         with patch.object(self.module, "TRANSCRIPTION_TIMEOUT", 0.01), patch.object(
-            self.module.subprocess, "run"
-        ) as run:
+            self.module.threading, "Timer", return_value=Mock()
+        ), patch.object(self.module.subprocess, "run") as run:
             status, body = self.stalled_request(10)
         self.assertEqual(status, 504)
         self.assertEqual(body, {"error": "transcription_timeout"})
