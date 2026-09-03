@@ -76,11 +76,11 @@ if [[ $LIFEOS_DIR != "$source_dir" ]]; then
     echo 'existing non-empty target is not a LifeOS directory (missing .lifeos-install marker)' >&2
     exit 1
   fi
+  [[ -f "$LIFEOS_DIR/.lifeos-install" ]] || touch "$LIFEOS_DIR/.lifeos-install"
   tar -C "$source_dir" \
     --exclude=.git --exclude=.env --exclude=node_modules --exclude=.next \
     --exclude=uploads --exclude='*/uploads' --exclude='config.env' --exclude=.lifeos-install \
     -cf - . | tar -C "$LIFEOS_DIR" -xf -
-  touch "$LIFEOS_DIR/.lifeos-install"
 fi
 
 service_template="$source_dir/deploy/systemd/lifeos-asr-http.service.in"

@@ -113,6 +113,25 @@ grep -Fq 'missing .lifeos-install marker' "$tmp_dir/foreign.out" || fail "foreig
 grep -Fxq 'do not overwrite' "$foreign/important.txt" || fail "foreign target file changed"
 pass "normal install rejects non-LifeOS target"
 
+retry_target="$tmp_dir/retry"
+retry_config="$tmp_dir/retry.env"
+sed "s|^LIFEOS_DIR=.*|LIFEOS_DIR=$retry_target|" "$config" >"$retry_config"
+chmod 600 "$retry_config"
+mkdir -p "$tmp_dir/fail-tar"
+cat >"$tmp_dir/fail-tar/tar" <<'EOF'
+#!/usr/bin/env bash
+if [[ " $* " == *" -cf - "* ]]; then exit 1; fi
+cat >/dev/null
+EOF
+chmod +x "$tmp_dir/fail-tar/tar"
+if PATH="$tmp_dir/fail-tar:$PATH" TEST_MODE=1 bash "$installer" "$retry_config" >"$tmp_dir/retry.out" 2>&1; then
+  fail "simulated tar failure unexpectedly succeeded"
+fi
+[[ -f "$retry_target/.lifeos-install" ]] || fail "failed copy did not leave retry marker"
+TEST_MODE=1 bash "$installer" "$retry_config" >/dev/null 2>&1 || fail "marked target retry failed"
+[[ -f "$retry_target/README.md" ]] || fail "marked target retry did not copy source"
+pass "marker permits retry after partial copy"
+
 mkdir -p "$target"
 printf 'keep this target config\n' >"$target/config.env"
 touch "$target/.lifeos-install"
