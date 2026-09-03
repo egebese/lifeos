@@ -11,6 +11,11 @@ config_file=$(realpath "$1")
 case "$config_file" in
   "$source_dir"|"$source_dir"/*) echo "config file must be outside the source tree" >&2; exit 1 ;;
 esac
+config_mode=$(stat -c '%a' "$config_file")
+(( (8#$config_mode & 077) == 0 )) || {
+  echo 'config file permissions must not allow group/other read, write, or execute' >&2
+  exit 1
+}
 
 # The config is explicitly a trusted shell-style file; never print its values.
 set -a
@@ -28,6 +33,24 @@ done
 USER_SYSTEMD_DIR=${USER_SYSTEMD_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user}
 TTS_BASE_URL=${TTS_BASE_URL:-}
 
+reject_unit_unsafe() {
+  local name=$1 value=$2
+  [[ ! $value =~ [[:space:][:cntrl:]] ]] || {
+    echo "$name must not contain whitespace or control characters" >&2
+    exit 1
+  }
+}
+reject_unit_unsafe LIFEOS_DIR "$LIFEOS_DIR"
+reject_unit_unsafe ASR_PYTHON "$ASR_PYTHON"
+reject_unit_unsafe USER_SYSTEMD_DIR "$USER_SYSTEMD_DIR"
+reject_unit_unsafe CONFIG_FILE "$config_file"
+
+is_executable() {
+  if [[ $1 == */* ]]; then [[ -x $1 ]]; else command -v "$1" >/dev/null 2>&1; fi
+}
+is_executable "$ASR_PYTHON" || { echo 'ASR_PYTHON must be an executable path or PATH command' >&2; exit 1; }
+is_executable "$FFMPEG_BIN" || { echo 'FFMPEG_BIN must be an executable path or PATH command' >&2; exit 1; }
+
 printf 'LifeOS install dir: %s\n' "$LIFEOS_DIR"
 printf 'llama.cpp endpoint: %s\n' "$LLAMA_CPP_BASE_URL"
 printf 'ASR endpoint: %s\n' "$ASR_HTTP_URL"
@@ -41,8 +64,7 @@ fi
 chmod 600 "$config_file"
 if [[ ${TEST_MODE:-0} != 1 ]]; then
   command -v docker >/dev/null || { echo 'docker is required' >&2; exit 1; }
-  [[ -x $ASR_PYTHON ]] || { echo "ASR_PYTHON is not executable" >&2; exit 1; }
-  command -v "$FFMPEG_BIN" >/dev/null 2>&1 || { echo 'FFMPEG_BIN is required' >&2; exit 1; }
+  command -v curl >/dev/null || { echo 'curl is required' >&2; exit 1; }
   command -v systemctl >/dev/null || { echo 'systemctl is required' >&2; exit 1; }
 fi
 
@@ -74,6 +96,21 @@ if [[ ${TEST_MODE:-0} != 1 ]]; then
   systemctl --user daemon-reload
   systemctl --user enable --now lifeos-asr-http.service
   docker compose --env-file "$config_file" -f "$LIFEOS_DIR/docker-compose.yml" up -d --build
+
+  health_check() {
+    local name=$1 url=$2
+    if ! curl --fail --silent --show-error --connect-timeout 5 --max-time 15 -o /dev/null "$url"; then
+      echo "health check failed: $name" >&2
+      exit 1
+    fi
+  }
+  health_check login "${NEXT_PUBLIC_APP_URL%/}/login"
+  health_check llama-models "${LLAMA_CPP_BASE_URL%/}/models"
+  if ! curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
+    -H "X-ASR-Token: $ASR_HTTP_TOKEN" -o /dev/null "${ASR_HTTP_URL%/}/health"; then
+    echo 'health check failed: asr-health' >&2
+    exit 1
+  fi
 else
   printf 'test-mode: skipped Docker and systemd\n'
 fi

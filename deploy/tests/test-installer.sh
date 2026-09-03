@@ -34,6 +34,16 @@ USER_SYSTEMD_DIR=$systemd_dir
 EOF
 chmod 600 "$config"
 
+insecure="$tmp_dir/insecure.env"
+cp "$config" "$insecure"
+chmod 640 "$insecure"
+if TEST_MODE=1 bash "$installer" --dry-run "$insecure" >"$tmp_dir/insecure.out" 2>&1; then
+  fail "group-readable config unexpectedly succeeded"
+fi
+grep -Fq 'permissions' "$tmp_dir/insecure.out" || fail "insecure config error was unclear"
+[[ $(stat -c '%a' "$insecure") == 640 ]] || fail "dry-run changed config permissions"
+pass "dry-run rejects readable config without chmod"
+
 output=$(TEST_MODE=1 bash "$installer" --dry-run "$config" 2>&1) || fail "complete dry-run failed: $output"
 grep -Fq "$target" <<<"$output" || fail "dry-run omitted install directory"
 grep -Fq 'http://localhost:8081/v1' <<<"$output" || fail "dry-run omitted LLM endpoint"
@@ -62,6 +72,24 @@ fi
 [[ ! -e "$target" ]] || fail "missing config changed target state"
 [[ ! -s "$log" ]] || fail "missing config invoked Docker/systemd"
 pass "missing required value fails before state changes"
+
+bad_python="$tmp_dir/bad-python.env"
+sed 's|^ASR_PYTHON=.*|ASR_PYTHON=/no/such/python|' "$config" >"$bad_python"
+chmod 600 "$bad_python"
+if TEST_MODE=1 bash "$installer" --dry-run "$bad_python" >"$tmp_dir/bad-python.out" 2>&1; then
+  fail "missing ASR_PYTHON unexpectedly succeeded"
+fi
+grep -Fq 'ASR_PYTHON' "$tmp_dir/bad-python.out" || fail "missing ASR_PYTHON error was unclear"
+pass "dry-run validates executable paths"
+
+unsafe="$tmp_dir/unsafe.env"
+sed "s|^LIFEOS_DIR=.*|LIFEOS_DIR='$tmp_dir/with space'|" "$config" >"$unsafe"
+chmod 600 "$unsafe"
+if TEST_MODE=1 bash "$installer" --dry-run "$unsafe" >"$tmp_dir/unsafe.out" 2>&1; then
+  fail "whitespace path unexpectedly succeeded"
+fi
+grep -Fq 'whitespace or control' "$tmp_dir/unsafe.out" || fail "unsafe path error was unclear"
+pass "dry-run rejects unsafe unit paths"
 
 mkdir -p "$target"
 printf 'keep this target config\n' >"$target/config.env"
