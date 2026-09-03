@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 COPY package.json pnpm-lock.yaml* ./
 RUN corepack enable && \
-    (pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile)
+    pnpm install --frozen-lockfile
 
 ### --- builder ---
 FROM node:20-alpine AS builder

@@ -216,6 +216,7 @@ class ServerTests(unittest.TestCase):
         timer = Mock()
         handler = object.__new__(self.module.ASRHandler)
         handler.connection = connection
+        handler._headers_parsed = False
         with patch.object(self.module.threading, "Timer", return_value=timer) as timer_factory, patch.object(
             self.module.BaseHTTPRequestHandler, "setup"
         ), patch.object(self.module.BaseHTTPRequestHandler, "finish"):
@@ -225,6 +226,8 @@ class ServerTests(unittest.TestCase):
                 self.module.TRANSCRIPTION_TIMEOUT, unittest.mock.ANY
             )
             timer.start.assert_called_once_with()
+            timer_factory.call_args.args[1]()
+            handler._headers_parsed = True
             timer_factory.call_args.args[1]()
             self.module.ASRHandler.finish(handler)
 
@@ -385,7 +388,7 @@ class ServerTests(unittest.TestCase):
                 content_type="audio/wav",
             )
         self.assertEqual(status, 503)
-        self.assertEqual(body, {"error": "busy"})
+        self.assertEqual(body, {"error": "wyoming_unavailable"})
         slots.acquire.assert_called_once_with(blocking=False)
         run.assert_not_called()
 
@@ -464,7 +467,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(len(connection.timeouts), 2)
         self.assertLess(connection.timeouts[1], connection.timeouts[0])
 
-    def test_malformed_content_length_returns_400(self):
+    def test_malformed_content_length_returns_empty_audio_400(self):
         status, body = self.request(
             "POST",
             "/v1/audio/transcriptions",
@@ -473,7 +476,14 @@ class ServerTests(unittest.TestCase):
             content_length="not-a-number",
         )
         self.assertEqual(status, 400)
-        self.assertEqual(body, {"error": "bad_request"})
+        self.assertEqual(body, {"error": "empty_audio"})
+
+    def test_default_http_errors_are_json_not_html(self):
+        send_json = Mock()
+        handler = object.__new__(self.module.ASRHandler)
+        handler._send_json = send_json
+        self.module.ASRHandler.send_error(handler, 501, "unsupported")
+        send_json.assert_called_once_with(404, {"error": "not_found"})
 
     def stalled_request(self, content_length):
         connection = socket.create_connection(

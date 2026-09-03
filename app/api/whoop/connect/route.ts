@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
-import { requireSession } from "@/lib/auth/session";
+import { requireSession, secureCookies } from "@/lib/auth/session";
 import { buildAuthorizeUrl } from "@/lib/whoop/oauth";
 
 export async function GET() {
@@ -10,7 +10,7 @@ export async function GET() {
   const jar = await cookies();
   jar.set("lt_whoop_state", state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookies(),
     sameSite: "lax",
     path: "/",
     maxAge: 600,

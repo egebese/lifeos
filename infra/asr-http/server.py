@@ -170,6 +170,7 @@ def _transcribe_with_timeout(wav_data, deadline):
 class ASRHandler(BaseHTTPRequestHandler):
     def setup(self):
         self._deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
+        self._headers_parsed = False
         self._watchdog = threading.Timer(
             TRANSCRIPTION_TIMEOUT, self._close_connection
         )
@@ -185,6 +186,8 @@ class ASRHandler(BaseHTTPRequestHandler):
             raise
 
     def _close_connection(self):
+        if self._headers_parsed:
+            return
         try:
             self.connection.shutdown(socket.SHUT_RDWR)
         except OSError:
@@ -239,7 +242,7 @@ class ASRHandler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except (TypeError, ValueError):
-            self._send_json(400, {"error": "bad_request"})
+            self._send_json(400, {"error": "empty_audio"})
             return None
         if length <= 0:
             self._send_json(400, {"error": "empty_audio"})
@@ -275,7 +278,7 @@ class ASRHandler(BaseHTTPRequestHandler):
             self._send_json(415, {"error": "unsupported_audio"})
             return
         if not TRANSCRIPTION_SLOTS.acquire(blocking=False):
-            self._send_json(503, {"error": "busy"})
+            self._send_json(503, {"error": "wyoming_unavailable"})
             return
         try:
             body = self._audio_body(deadline)
@@ -341,11 +344,14 @@ class ASRHandler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self._not_found()
 
+    def parse_request(self):
+        try:
+            return super().parse_request()
+        finally:
+            self._headers_parsed = True
+
     def send_error(self, code, message=None, explain=None):
-        if code == 501:
-            self._not_found()
-            return
-        super().send_error(code, message, explain)
+        self._not_found()
 
 
 def main():

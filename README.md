@@ -153,12 +153,35 @@ pnpm dev                         # http://localhost:3000
 
 ## Deploy on `192.168.2.61`
 
-1. Copy `.env.example` to `.env` and keep the example values for `LLAMA_CPP_BASE_URL`, `LLAMA_CPP_MODEL`, `ASR_HTTP_URL`, and `NEXT_PUBLIC_APP_URL`.
-2. Set `ASR_HTTP_TOKEN` to the same random token used by the bridge. Generate it with `openssl rand -hex 32`; store it in the bridge environment file and the uncommitted LifeOS `.env` with mode `600`.
-3. Confirm the preloaded Qwen service is reachable at `192.168.2.11:8081`, and that the ASR bridge at `192.168.2.61:10202` can reach NeMo/Wyoming at `192.168.2.61:10300`.
-4. Run `docker compose up --build`. The Compose stack keeps Postgres data in `lt_pg`, uploads in `lt_uploads` mounted at `/data/uploads`, and the web app on port `3000`.
-5. Open `http://192.168.2.61:3000`, log in with `ADMIN_EMAIL` and the first-boot `ADMIN_PASSWORD`, then rotate the password from `/profile` immediately.
-6. For Whoop's daily safety-net sync, set `ENABLE_CRON=1`; keep `TZ=Europe/Istanbul` or set the deployment's IANA timezone. Configure the existing `WHOOP_*` variables only if Whoop is enabled.
+1. Copy `.env.example` to `.env`, generate a random `SESSION_SECRET`, set a non-default `ADMIN_PASSWORD`, and keep the example values for `LLAMA_CPP_BASE_URL`, `LLAMA_CPP_MODEL`, `ASR_HTTP_URL`, and `NEXT_PUBLIC_APP_URL`. This plain-HTTP LAN deployment uses `SESSION_COOKIE_SECURE=false`; set it to `true` when HTTPS terminates in front of LifeOS.
+2. Install ffmpeg on the host: `sudo apt-get install -y ffmpeg`.
+3. Install and enable the bridge as a user service:
+
+   ```bash
+   cd "$HOME/lifeos"
+   loginctl enable-linger "$USER"
+   mkdir -p "$HOME/.config/systemd/user"
+   cp infra/asr-http/lifeos-asr-http.service "$HOME/.config/systemd/user/"
+   umask 077
+   token="$(openssl rand -hex 32)"
+   printf 'ASR_HTTP_TOKEN=%s\n' "$token" > "$HOME/lifeos/asr-http.env"
+   sed -i "s/^ASR_HTTP_TOKEN=.*/ASR_HTTP_TOKEN=$token/" .env
+   unset token
+   chmod 600 "$HOME/lifeos/asr-http.env" .env
+   systemctl --user daemon-reload
+   systemctl --user enable --now lifeos-asr-http.service
+   ```
+4. Confirm the preloaded Qwen service is reachable at `192.168.2.11:8081` and the bridge can reach NeMo/Wyoming at `192.168.2.61:10300`:
+
+   ```bash
+   curl -fsS http://192.168.2.11:8081/v1/models
+   command -v ffmpeg
+   systemctl --user is-active lifeos-asr-http.service
+   ```
+
+5. Run `docker compose up -d --build`. The Compose stack keeps Postgres data in `lt_pg`, uploads in `lt_uploads` mounted at `/data/uploads`, and the web app on port `3000`.
+6. Open `http://192.168.2.61:3000`, log in with `ADMIN_EMAIL` and the first-boot `ADMIN_PASSWORD`, then rotate the password from `/profile` immediately.
+7. For Whoop's daily safety-net sync, set `ENABLE_CRON=1`; keep `TZ=Europe/Istanbul` or set the deployment's IANA timezone. Configure the existing `WHOOP_*` variables only if Whoop is enabled.
 
 The bridge and the existing TTS service at `192.168.2.61:10201` are host services, not Compose services. LifeOS does not restart or reconfigure them. No external AI API key is needed.
 

@@ -10,6 +10,13 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
 type SealedPayload = { sid: string; uid: string };
 
+export function secureCookies(): boolean {
+  return (
+    process.env.SESSION_COOKIE_SECURE === "true" ||
+    (process.env.SESSION_COOKIE_SECURE !== "false" && process.env.NODE_ENV === "production")
+  );
+}
+
 function secret(): string {
   const s = process.env.SESSION_SECRET;
   if (!s || s.length < 32) {
@@ -42,7 +49,7 @@ export async function createSession(args: {
   const jar = await cookies();
   jar.set(SESSION_COOKIE, sealed, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookies(),
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
