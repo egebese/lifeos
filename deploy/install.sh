@@ -104,21 +104,35 @@ if [[ ${TEST_MODE:-0} != 1 ]]; then
   systemctl --user enable --now lifeos-asr-http.service
   docker compose --env-file "$config_file" -f "$LIFEOS_DIR/docker-compose.yml" up -d --build
 
+  health_attempts=30
+  health_delay=2
   health_check() {
-    local name=$1 url=$2
-    if ! curl --fail --silent --show-error --connect-timeout 5 --max-time 15 -o /dev/null "$url"; then
-      echo "health check failed: $name" >&2
-      exit 1
-    fi
+    local name=$1 url=$2 attempt
+    for ((attempt = 1; attempt <= health_attempts; attempt++)); do
+      if curl --fail --silent --connect-timeout 5 --max-time 15 -o /dev/null "$url"; then
+        return 0
+      fi
+      if ((attempt < health_attempts)); then sleep "$health_delay"; fi
+    done
+    echo "health check failed: $name" >&2
+    exit 1
+  }
+  health_check_asr() {
+    local attempt
+    for ((attempt = 1; attempt <= health_attempts; attempt++)); do
+      if printf 'X-ASR-Token: %s\n' "$ASR_HTTP_TOKEN" | \
+        curl --fail --silent --connect-timeout 5 --max-time 15 \
+          -H @- -o /dev/null "${ASR_HTTP_URL%/}/health"; then
+        return 0
+      fi
+      if ((attempt < health_attempts)); then sleep "$health_delay"; fi
+    done
+    echo 'health check failed: asr-health' >&2
+    exit 1
   }
   health_check login "${NEXT_PUBLIC_APP_URL%/}/login"
   health_check llama-models "${LLAMA_CPP_BASE_URL%/}/models"
-  if ! printf 'X-ASR-Token: %s\n' "$ASR_HTTP_TOKEN" | \
-    curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
-      -H @- -o /dev/null "${ASR_HTTP_URL%/}/health"; then
-    echo 'health check failed: asr-health' >&2
-    exit 1
-  fi
+  health_check_asr
 else
   printf 'test-mode: skipped Docker and systemd\n'
 fi

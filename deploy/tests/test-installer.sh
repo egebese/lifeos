@@ -132,6 +132,46 @@ TEST_MODE=1 bash "$installer" "$retry_config" >/dev/null 2>&1 || fail "marked ta
 [[ -f "$retry_target/README.md" ]] || fail "marked target retry did not copy source"
 pass "marker permits retry after partial copy"
 
+normal_target="$tmp_dir/normal"
+normal_config="$tmp_dir/normal.env"
+normal_systemd="$tmp_dir/normal-systemd"
+sed -e "s|^LIFEOS_DIR=.*|LIFEOS_DIR=$normal_target|" -e "s|^USER_SYSTEMD_DIR=.*|USER_SYSTEMD_DIR=$normal_systemd|" "$config" >"$normal_config"
+chmod 600 "$normal_config"
+fake_normal="$tmp_dir/fake-normal"
+mkdir -p "$fake_normal"
+cat >"$fake_normal/docker" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"$fake_normal/loginctl" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"$fake_normal/systemctl" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"$fake_normal/curl" <<EOF
+#!/usr/bin/env bash
+log="$tmp_dir/health-curl.log"
+printf '%s\n' "\$*" >>"\$log"
+if [[ "\$*" == *"/login"* ]]; then
+  count_file="$tmp_dir/login-health-count"
+  count=0
+  [[ -f "\$count_file" ]] && count=\$(<"\$count_file")
+  count=\$((count + 1))
+  printf '%s\n' "\$count" >"\$count_file"
+  ((count < 3)) && exit 7
+fi
+exit 0
+EOF
+chmod +x "$fake_normal"/*
+if ! PATH="$fake_normal:$PATH" bash "$installer" "$normal_config" >"$tmp_dir/normal.out" 2>&1; then
+  fail "normal install did not retry health checks: $(<"$tmp_dir/normal.out")"
+fi
+[[ $(<"$tmp_dir/login-health-count") == 3 ]] || fail "health check did not retry twice"
+pass "normal install retries services until healthy"
+
 mkdir -p "$target"
 printf 'keep this target config\n' >"$target/config.env"
 touch "$target/.lifeos-install"
