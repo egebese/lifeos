@@ -53,6 +53,19 @@ for secret in asr-secret-value admin-secret-value session-secret-value; do
 done
 pass "dry-run reports non-secret configuration"
 
+credential_urls="$tmp_dir/credential-urls.env"
+sed -e 's|^LLAMA_CPP_BASE_URL=.*|LLAMA_CPP_BASE_URL=https://user:secret@example.test:8081/v1?key=secret|' \
+  -e 's|^ASR_HTTP_URL=.*|ASR_HTTP_URL=https://user:secret@example.test:10202/v1?key=secret|' \
+  -e 's|^TTS_BASE_URL=.*|TTS_BASE_URL=https://user:secret@example.test:10201/v1?key=secret|' \
+  "$config" >"$credential_urls"
+chmod 600 "$credential_urls"
+output=$(TEST_MODE=1 bash "$installer" --dry-run "$credential_urls" 2>&1) || fail "credential URL dry-run failed: $output"
+grep -Fq 'https://example.test:8081/v1' <<<"$output" || fail "redacted URL omitted endpoint"
+for secret in 'user:secret' 'key=secret'; do
+  ! grep -Fq "$secret" <<<"$output" || fail "credential URL leaked in dry-run"
+done
+pass "dry-run redacts credential-bearing URLs"
+
 missing="$tmp_dir/missing.env"
 sed '/^SESSION_SECRET=/d' "$config" >"$missing"
 log="$tmp_dir/commands.log"
@@ -147,8 +160,9 @@ cat >"$fake_normal/loginctl" <<'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
-cat >"$fake_normal/systemctl" <<'EOF'
+cat >"$fake_normal/systemctl" <<EOF
 #!/usr/bin/env bash
+printf 'systemctl %s\n' "\$*" >>"$log"
 exit 0
 EOF
 cat >"$fake_normal/curl" <<EOF
@@ -170,15 +184,18 @@ if ! PATH="$fake_normal:$PATH" bash "$installer" "$normal_config" >"$tmp_dir/nor
   fail "normal install did not retry health checks: $(<"$tmp_dir/normal.out")"
 fi
 [[ $(<"$tmp_dir/login-health-count") == 3 ]] || fail "health check did not retry twice"
+grep -Fq 'systemctl --user restart lifeos-asr-http.service' "$log" || fail "normal install did not restart the bridge"
 pass "normal install retries services until healthy"
 
 mkdir -p "$target"
 printf 'keep this target config\n' >"$target/config.env"
+printf 'stale source file\n' >"$target/stale-source-file.txt"
 touch "$target/.lifeos-install"
 TEST_MODE=1 bash "$installer" "$config" >/dev/null 2>&1 || fail "normal test-mode install failed"
 [[ -f "$target/README.md" ]] || fail "source marker was not copied"
 [[ -f "$target/.lifeos-install" ]] || fail "install marker was not preserved"
 grep -Fxq 'keep this target config' "$target/config.env" || fail "target config was overwritten"
+[[ ! -e "$target/stale-source-file.txt" ]] || fail "stale source file was preserved"
 [[ -f "$systemd_dir/lifeos-asr-http.service" ]] || fail "service was not rendered"
 pass "normal install copies source and preserves target config"
 

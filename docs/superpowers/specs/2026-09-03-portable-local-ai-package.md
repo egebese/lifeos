@@ -15,10 +15,10 @@ The config is a trusted shell-style environment file. It is mode 600 and is neve
 
 ## Architecture
 
-- LifeOS remains a Docker Compose application with named Postgres and uploads volumes. Compose uses explicit `LIFEOS_VOLUME_PREFIX` names (default `lifeos`) so moving the checkout does not silently create a new empty database or uploads volume. Existing deployments set the prefix matching their current Compose project name before migration.
+- LifeOS remains a Docker Compose application with named Postgres and uploads volumes. Compose uses a stable `LIFEOS_PROJECT_NAME` (default `lifeos`) and explicit `LIFEOS_VOLUME_PREFIX` names (default `lifeos`) so moving the checkout does not silently create a second stack or empty database/uploads volumes. Existing deployments keep both values unchanged.
 - The application receives `LLAMA_CPP_BASE_URL`, `LLAMA_CPP_MODEL`, `ASR_HTTP_URL`, `ASR_HTTP_TOKEN`, and `TTS_BASE_URL` from the config file.
 - The local AI client validates any configured exact model id by reading `/v1/models`; it requires the matching llama.cpp metadata to advertise `multimodal`. The original deployment's model path is no longer hard-coded as the only accepted value.
-- The generated user systemd unit loads the private config with `EnvironmentFile=`, so the Python ASR bridge receives `ASR_HTTP_HOST`, `ASR_HTTP_PORT`, `WYOMING_URI`, and `FFMPEG_BIN` from the same config file. It continues to forward English audio to an existing Wyoming-compatible STT server; it does not download or own a model.
+- The generated user systemd unit loads the private config with `EnvironmentFile=`, so the Python ASR bridge receives `ASR_HTTP_HOST`, `ASR_HTTP_PORT`, `WYOMING_URI`, and `FFMPEG_BIN` from the same config file. Updates restart the bridge so changed settings take effect. It continues to forward English audio to an existing Wyoming-compatible STT server; it does not download or own a model.
 - TTS is a configured provider endpoint for future spoken-output clients. Current LifeOS routes do not call TTS, so the package documents hosting and configuration without claiming an unused integration.
 - The installer renders a user-level systemd service from a template using configured absolute paths, enables it, and starts only that bridge. Existing model services are dependencies and are not stopped, reconfigured, or replaced.
 
@@ -29,6 +29,7 @@ Required application values:
 | Variable | Meaning |
 | --- | --- |
 | `LIFEOS_DIR` | Install directory |
+| `LIFEOS_PROJECT_NAME` | Stable Compose project name; keep it unchanged after first install |
 | `LIFEOS_VOLUME_PREFIX` | Stable Compose volume prefix; keep it unchanged after first install |
 | `NEXT_PUBLIC_APP_URL` | Browser-visible LifeOS URL |
 | `LLAMA_CPP_BASE_URL` | OpenAI-compatible llama.cpp `/v1` base URL |
@@ -61,12 +62,12 @@ No public default contains a personal IP address, username, home path, model pat
 
 - reads and validates the supplied config without printing secret values;
 - checks Docker, ffmpeg, the configured Wyoming Python interpreter, and systemd user support in normal mode;
-- copies source into `LIFEOS_DIR` when the install directory differs from the checkout, excluding `.env`, the private config, dependency/build directories, and runtime uploads;
+- builds a clean staged source tree when the install directory differs from the checkout, preserving `.env`, legacy config, and uploads while moving the previous tree to a recoverable hidden backup;
 - renders `lifeos-asr-http.service` under the user's systemd directory with configured paths and an explicit `EnvironmentFile=`;
-- enables linger when possible, reloads the user manager, and starts the bridge;
+- enables linger when possible, reloads the user manager, and restarts the bridge;
 - runs `docker compose --env-file CONFIG up -d --build`;
-- performs configuration/dependency preflight and Compose validation before service restart, then bounded-retry endpoint health checks for the app, LLM model list, and ASR bridge;
-- never runs `docker compose down -v`, removes named volumes, or overwrites an existing private config.
+- performs configuration/dependency preflight and Compose validation before service restart, then bounded-retry endpoint health checks for the app, the LLM model list from inside the web container, and the ASR bridge;
+- never runs `docker compose down -v`, removes named volumes, or overwrites an existing private config. Endpoint metadata saved in AI logs and installer output excludes URL credentials, queries, and fragments.
 
 `deploy/update.sh` calls the same idempotent install path after source has been updated. Updates preserve the external config and named volumes; changing an endpoint requires editing only that config and rerunning the script.
 

@@ -4,7 +4,7 @@
 
 **Goal:** Ship a reusable config-driven installer and provider guide for LifeOS local LLM vision, STT, and TTS deployments.
 
-**Architecture:** Keep provider processes outside Docker. A private shell-style config drives Compose interpolation, the parametrized ASR bridge, and a generated systemd user unit. The installer is idempotent and preserves the config and named volumes; the update wrapper reruns the same path after source updates.
+**Architecture:** Keep provider processes outside Docker. A private shell-style config drives Compose interpolation, the parametrized ASR bridge, and a generated systemd user unit. The installer is idempotent, uses a stable Compose project/volume identity, preserves the config and named volumes, and stages clean source updates; the update wrapper reruns the same path after source updates.
 
 **Tech Stack:** Bash, Docker Compose, systemd user services, Python stdlib bridge, existing TypeScript/Next.js local AI client.
 

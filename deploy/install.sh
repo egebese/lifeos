@@ -50,10 +50,27 @@ is_executable() {
 is_executable "$ASR_PYTHON" || { echo 'ASR_PYTHON must be an executable path or PATH command' >&2; exit 1; }
 is_executable "$FFMPEG_BIN" || { echo 'FFMPEG_BIN must be an executable path or PATH command' >&2; exit 1; }
 
+redact_endpoint() {
+  local value=$1 rest authority path
+  [[ $value == *://* ]] || { printf '<configured>'; return; }
+  rest=${value#*://}
+  rest=${rest%%\#*}
+  rest=${rest%%\?*}
+  authority=${rest%%/*}
+  path=
+  [[ $rest == */* ]] && path=/${rest#*/}
+  authority=${authority##*@}
+  printf '%s://%s%s' "${value%%://*}" "$authority" "$path"
+}
+
 printf 'LifeOS install dir: %s\n' "$LIFEOS_DIR"
-printf 'llama.cpp endpoint: %s\n' "$LLAMA_CPP_BASE_URL"
-printf 'ASR endpoint: %s\n' "$ASR_HTTP_URL"
-printf 'TTS endpoint: %s\n' "${TTS_BASE_URL:-<not configured>}"
+printf 'llama.cpp endpoint: %s\n' "$(redact_endpoint "$LLAMA_CPP_BASE_URL")"
+printf 'ASR endpoint: %s\n' "$(redact_endpoint "$ASR_HTTP_URL")"
+if [[ -n $TTS_BASE_URL ]]; then
+  printf 'TTS endpoint: %s\n' "$(redact_endpoint "$TTS_BASE_URL")"
+else
+  printf 'TTS endpoint: <not configured>\n'
+fi
 
 if $dry_run; then
   printf 'dry-run: no files, Docker, or systemd changes\n'
@@ -77,10 +94,27 @@ if [[ $LIFEOS_DIR != "$source_dir" ]]; then
     exit 1
   fi
   [[ -f "$LIFEOS_DIR/.lifeos-install" ]] || touch "$LIFEOS_DIR/.lifeos-install"
-  tar -C "$source_dir" \
+  staging_dir=$(mktemp -d "$(dirname "$LIFEOS_DIR")/.lifeos-staging.XXXXXX")
+  if ! tar -C "$source_dir" \
     --exclude=.git --exclude=.env --exclude=node_modules --exclude=.next \
     --exclude=uploads --exclude='*/uploads' --exclude='config.env' --exclude=.lifeos-install \
-    -cf - . | tar -C "$LIFEOS_DIR" -xf -
+    -cf - . | tar -C "$staging_dir" -xf -; then
+    rm -rf "$staging_dir"
+    exit 1
+  fi
+  for preserved in .env config.env uploads; do
+    [[ -e "$LIFEOS_DIR/$preserved" ]] && cp -a "$LIFEOS_DIR/$preserved" "$staging_dir/$preserved"
+  done
+  touch "$staging_dir/.lifeos-install"
+  previous_dir="$(dirname "$LIFEOS_DIR")/.$(basename "$LIFEOS_DIR").previous.$(date +%Y%m%d%H%M%S)"
+  if ! mv "$LIFEOS_DIR" "$previous_dir"; then
+    rm -rf "$staging_dir"
+    exit 1
+  fi
+  if ! mv "$staging_dir" "$LIFEOS_DIR"; then
+    mv "$previous_dir" "$LIFEOS_DIR"
+    exit 1
+  fi
 fi
 
 service_template="$source_dir/deploy/systemd/lifeos-asr-http.service.in"
@@ -101,7 +135,8 @@ if [[ ${TEST_MODE:-0} != 1 ]]; then
   docker compose --env-file "$config_file" -f "$LIFEOS_DIR/docker-compose.yml" config --quiet
   loginctl enable-linger "$(id -un)" 2>/dev/null || true
   systemctl --user daemon-reload
-  systemctl --user enable --now lifeos-asr-http.service
+  systemctl --user enable lifeos-asr-http.service
+  systemctl --user restart lifeos-asr-http.service
   docker compose --env-file "$config_file" -f "$LIFEOS_DIR/docker-compose.yml" up -d --build
 
   health_attempts=30
@@ -130,8 +165,21 @@ if [[ ${TEST_MODE:-0} != 1 ]]; then
     echo 'health check failed: asr-health' >&2
     exit 1
   }
+  health_check_llama() {
+    local attempt
+    for ((attempt = 1; attempt <= health_attempts; attempt++)); do
+      if docker compose --env-file "$config_file" -f "$LIFEOS_DIR/docker-compose.yml" \
+        exec -T -e "LIFEOS_LLM_HEALTH_URL=${LLAMA_CPP_BASE_URL%/}/models" web node \
+        -e 'fetch(process.env.LIFEOS_LLM_HEALTH_URL).then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))'; then
+        return 0
+      fi
+      if ((attempt < health_attempts)); then sleep "$health_delay"; fi
+    done
+    echo 'health check failed: llama-models' >&2
+    exit 1
+  }
   health_check login "${NEXT_PUBLIC_APP_URL%/}/login"
-  health_check llama-models "${LLAMA_CPP_BASE_URL%/}/models"
+  health_check_llama
   health_check_asr
 else
   printf 'test-mode: skipped Docker and systemd\n'

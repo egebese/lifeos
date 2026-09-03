@@ -86,7 +86,8 @@ cp .env.example .env
 #   SESSION_SECRET   → openssl rand -base64 64
 #   ADMIN_EMAIL      → your email
 #   ADMIN_PASSWORD   → first-boot password (change from /profile after login)
-#   ASR_HTTP_TOKEN   → the same token configured for the ASR HTTP bridge
+#   LLAMA_CPP_BASE_URL / LLAMA_CPP_MODEL → your OpenAI-compatible local model
+#   ASR_HTTP_URL / ASR_HTTP_TOKEN       → your token-protected STT bridge
 ```
 
 ### Option A — full Docker stack (fastest)
@@ -116,6 +117,7 @@ pnpm dev                         # http://localhost:3000
 | `SESSION_SECRET` | ✅ | 64-byte base64 (`openssl rand -base64 64`) for `iron-session` |
 | `ADMIN_EMAIL` | ✅ | Bootstraps the single admin account on first boot |
 | `ADMIN_PASSWORD` | ✅ | First-boot password; rotate it from `/profile` immediately after first login |
+| `LIFEOS_PROJECT_NAME` | ✅ (deployment) | Stable Compose project name; do not change after install |
 | `LIFEOS_VOLUME_PREFIX` | ✅ (deployment) | Stable prefix for named Postgres/uploads volumes; do not change after install |
 | `LLAMA_CPP_BASE_URL` | ✅ (deployment) | OpenAI-compatible llama.cpp `/v1` URL |
 | `LLAMA_CPP_MODEL` | ✅ (deployment) | Exact model id returned by llama.cpp `/v1/models`; must advertise `multimodal` |
@@ -167,7 +169,8 @@ chmod 600 "$HOME/.config/lifeos.env"
 The installer keeps the private config outside the checkout, renders the
 ASR bridge user service, validates the Compose file, and starts LifeOS. It
 does not stop or reconfigure existing llama.cpp, STT, or TTS processes. For
-updates, update the checkout and rerun:
+updates, it stages a clean source tree, keeps the previous tree as a hidden
+recoverable backup, and reruns:
 
 ```bash
 ./deploy/update.sh "$HOME/.config/lifeos.env"

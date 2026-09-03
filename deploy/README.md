@@ -30,9 +30,10 @@ For a safe preview:
 
     ./deploy/install.sh --dry-run "$HOME/.config/lifeos.env"
 
-The installer uses LIFEOS_VOLUME_PREFIX to name the Postgres and uploads
-volumes. Keep that value unchanged after the first install. Never use
-docker compose down -v for maintenance.
+The installer uses LIFEOS_PROJECT_NAME and LIFEOS_VOLUME_PREFIX to keep the
+Compose stack and its Postgres/uploads volumes stable when the checkout moves.
+Keep both values unchanged after the first install. Never use docker compose
+down -v for maintenance.
 
 ## 2. Host llama.cpp text and vision
 
@@ -99,8 +100,9 @@ Set these values in the LifeOS config:
     ASR_HTTP_TOKEN=generate-a-long-random-value
 
 The installer writes the token-protected bridge as
-lifeos-asr-http.service in the user's systemd directory. It does not restart
-the Wyoming server. If the Wyoming server is on another host, set
+lifeos-asr-http.service in the user's systemd directory and restarts that
+bridge when its configuration changes. It does not restart the Wyoming server.
+If the Wyoming server is on another host, set
 WYOMING_URI=tcp://that-host:10300 and restrict the firewall accordingly.
 
 Verify after installation:
@@ -135,6 +137,7 @@ Setting TTS_BASE_URL does not add speech output to current LifeOS.
 At minimum, edit these fields:
 
     LIFEOS_DIR=$HOME/lifeos
+    LIFEOS_PROJECT_NAME=lifeos
     LIFEOS_VOLUME_PREFIX=lifeos
     NEXT_PUBLIC_APP_URL=http://YOUR_LIFEOS_HOST:3000
     LLAMA_CPP_BASE_URL=http://YOUR_LLM_HOST:8081/v1
@@ -158,9 +161,10 @@ After updating the checkout:
     ./deploy/update.sh "$HOME/.config/lifeos.env"
 
 The update path preserves the private config, named volumes, uploads, and
-systemd unit. It does not delete data or run down -v. If you move the
-checkout, keep LIFEOS_VOLUME_PREFIX unchanged so Compose attaches the same
-volumes.
+systemd unit. It stages a clean source tree and keeps the previous tree as a
+hidden recoverable backup. It does not delete data or run down -v. If you move
+the checkout, keep LIFEOS_PROJECT_NAME and LIFEOS_VOLUME_PREFIX unchanged so
+Compose attaches the same stack and volumes.
 
 For HTTPS behind a reverse proxy, set NEXT_PUBLIC_APP_URL to the HTTPS origin
 and SESSION_COOKIE_SECURE=true. For plain HTTP on a trusted LAN, leave it

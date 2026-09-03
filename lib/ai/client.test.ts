@@ -119,6 +119,7 @@ test("chat validates the exact multimodal model once and sends OpenAI messages",
         { role: "user", content: "Say hello" },
       ]);
       assert.equal(body.model, MODEL);
+      assert.deepEqual(body.chat_template_kwargs, { enable_thinking: false });
       assert.equal(body.stream, false);
       assert.equal(body.temperature, 0.2);
       assert.equal(body.max_tokens, 17);
@@ -232,6 +233,17 @@ test("includes the local LLM endpoint in redacted prompt metadata", () => {
   assert.doesNotMatch(JSON.stringify(metadata), /data:image\/jpeg|\/9j\//);
 });
 
+test("redacts credentials and query strings from local endpoint metadata", () => {
+  const metadata = redactedLocalAiPrompt("https://user:secret@example.test:8081/v1?token=secret", {
+    model: MODEL,
+  });
+  assert.deepEqual(metadata, {
+    endpoint: "https://example.test:8081/v1",
+    request: { model: MODEL },
+  });
+  assert.doesNotMatch(JSON.stringify(metadata), /user|secret|token/);
+});
+
 test("maps local AI failures to safe route status and detail", () => {
   assert.deepEqual(localAiRouteFailure(new LocalAiTimeoutError()), {
     status: 503,
@@ -257,6 +269,30 @@ test("model-list timeout is a typed unavailable error", async () => {
   await assert.rejects(
     () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
     (error: unknown) => error instanceof LocalAiTimeoutError && error.code === "local_ai_unavailable",
+  );
+});
+
+test("allows reasoning models enough time to complete a meal parse", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      if (req.url === "/v1/chat/completions") return sendJson(res, chatResponse("ok"));
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      const originalTimeout = AbortSignal.timeout;
+      const timeouts: number[] = [];
+      AbortSignal.timeout = ((milliseconds: number) => {
+        timeouts.push(milliseconds);
+        return originalTimeout(milliseconds);
+      }) as typeof AbortSignal.timeout;
+      try {
+        await chat({ userId: "u", kind: "food_vision", prompt: "parse this meal" });
+      } finally {
+        AbortSignal.timeout = originalTimeout;
+      }
+      assert.deepEqual(timeouts, [5000, 60000]);
+    },
   );
 });
 

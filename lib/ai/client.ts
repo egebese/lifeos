@@ -115,6 +115,19 @@ function endpoint(baseUrl: string, pathName: string): string {
   }
 }
 
+function redactEndpoint(raw: string): string {
+  try {
+    const url = new URL(raw);
+    url.username = "";
+    url.password = "";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return "<invalid-endpoint>";
+  }
+}
+
 function timedOut(error: unknown): boolean {
   const name = (error as { name?: unknown } | null)?.name;
   return name === "AbortError" || name === "TimeoutError" || (error instanceof Error && /timed out|timeout/i.test(error.message));
@@ -137,7 +150,7 @@ export function redactForLog(value: unknown): unknown {
 }
 
 export function redactedLocalAiPrompt(endpoint: string, request: unknown): object {
-  return redactForLog({ endpoint, request }) as object;
+  return redactForLog({ endpoint: redactEndpoint(endpoint), request }) as object;
 }
 
 async function recordAiMessage(args: {
@@ -223,6 +236,7 @@ async function completion(args: ChatArgs, messages: OpenAiMessage[], defaultTemp
   const request = {
     model: configured.model,
     messages,
+    chat_template_kwargs: { enable_thinking: false },
     temperature: args.temperature ?? defaultTemperature,
     max_tokens: args.maxTokens ?? defaultMaxTokens,
     stream: false,
@@ -237,7 +251,7 @@ async function completion(args: ChatArgs, messages: OpenAiMessage[], defaultTemp
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(request),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(60000),
       });
     } catch (error) {
       if (timedOut(error)) throw new LocalAiTimeoutError();
