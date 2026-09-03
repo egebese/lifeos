@@ -24,11 +24,11 @@ WYOMING_URI = f"tcp://{WYOMING_HOST}:{WYOMING_PORT}"
 MAX_UPLOAD = 15 * 1024 * 1024
 HEALTH_TIMEOUT = 2.0
 TRANSCRIPTION_TIMEOUT = 45.0
-PCM_CHUNK_BYTES = 1024
 BODY_READ_CHUNK_BYTES = 64 * 1024
 MAX_AUDIO_SECONDS = 60
 MAX_DECODED_WAV_BYTES = 2_000_000
 TRANSCRIPTION_SLOTS = threading.BoundedSemaphore(2)
+HTTP_HEADER_TIMEOUT = 10.0
 
 
 class UnsupportedAudio(Exception):
@@ -134,9 +134,7 @@ async def _transcribe(wav_data):
                     await client.write_event(
                         AudioStart(rate=16000, width=2, channels=1).event()
                     )
-                    for chunk in wav_to_chunks(
-                        wav_file, samples_per_chunk=PCM_CHUNK_BYTES // 2
-                    ):
+                    for chunk in wav_to_chunks(wav_file, samples_per_chunk=1024):
                         await client.write_event(chunk.event())
                     await client.write_event(AudioStop().event())
 
@@ -170,6 +168,10 @@ def _transcribe_with_timeout(wav_data, deadline):
 
 
 class ASRHandler(BaseHTTPRequestHandler):
+    def setup(self):
+        super().setup()
+        self.connection.settimeout(HTTP_HEADER_TIMEOUT)
+
     def log_message(self, format, *args):
         return
 

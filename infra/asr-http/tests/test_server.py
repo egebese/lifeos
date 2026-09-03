@@ -203,8 +203,16 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 503)
         self.assertEqual(body, {"error": "wyoming_unavailable"})
 
+    def test_handler_setup_sets_fixed_header_timeout(self):
+        connection = Mock()
+        handler = object.__new__(self.module.ASRHandler)
+        handler.connection = connection
+        with patch.object(self.module.BaseHTTPRequestHandler, "setup"):
+            self.module.ASRHandler.setup(handler)
+        connection.settimeout.assert_called_once_with(self.module.HTTP_HEADER_TIMEOUT)
+
     def test_post_transcription_verifies_exact_raw_pcm_event_flow(self):
-        pcm = bytes(range(256)) * 6
+        pcm = bytes(range(256)) * 16
         fake = WyomingFake()
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(pcm), stderr=b"")
         with patch.object(
@@ -246,10 +254,11 @@ class ServerTests(unittest.TestCase):
             fake.events[1].data,
             {"rate": 16000, "width": 2, "channels": 1, "timestamp": None},
         )
-        chunks = [AudioChunk.from_event(event).audio for event in fake.events[2:4]]
-        self.assertEqual(b"".join(chunks), pcm)
-        self.assertTrue(all(len(chunk) <= 1024 for chunk in chunks))
-        self.assertTrue(all(b"RIFF" not in chunk for chunk in chunks))
+        chunks = [AudioChunk.from_event(event) for event in fake.events[2:4]]
+        self.assertEqual([chunk.samples for chunk in chunks], [1024, 1024])
+        self.assertEqual([len(chunk.audio) for chunk in chunks], [2048, 2048])
+        self.assertEqual(b"".join(chunk.audio for chunk in chunks), pcm)
+        self.assertTrue(all(b"RIFF" not in chunk.audio for chunk in chunks))
 
     def test_non_post_and_unknown_paths_return_404(self):
         for method, path in (
