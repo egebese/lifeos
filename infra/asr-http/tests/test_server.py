@@ -101,12 +101,20 @@ class DummySocket:
         pass
 
 
+class FakeClock:
+    def __init__(self):
+        self.value = 10.0
+
+    def monotonic(self):
+        return self.value
+
+
 class ServerTests(unittest.TestCase):
     def setUp(self):
         if not SERVER_PATH.is_file():
             self.fail("server.py is missing")
 
-        self.env_patch = patch.dict(os.environ, {"LIFEOS_ASR_TOKEN": "test-token"})
+        self.env_patch = patch.dict(os.environ, {"ASR_HTTP_TOKEN": "test-token"})
         self.env_patch.start()
         self.module = load_server()
         self.httpd = self.module.ThreadingHTTPServer(
@@ -146,10 +154,11 @@ class ServerTests(unittest.TestCase):
 
     def test_token_auth_protects_health_and_transcription(self):
         for path in ("/health", "/v1/audio/transcriptions"):
-            with self.subTest(path=path):
-                status, body = self.request("POST", path, token="wrong")
-                self.assertEqual(status, 401)
-                self.assertEqual(body, {"error": "unauthorized"})
+            for token in (None, "wrong"):
+                with self.subTest(path=path, token=token):
+                    status, body = self.request("POST", path, token=token)
+                    self.assertEqual(status, 401)
+                    self.assertEqual(body, {"error": "unauthorized"})
 
     def test_post_health_returns_ok_and_unavailable_is_503(self):
         create_connection = Mock(return_value=DummySocket())
@@ -216,6 +225,8 @@ class ServerTests(unittest.TestCase):
         for method, path in (
             ("GET", "/health"),
             ("PUT", "/v1/audio/transcriptions"),
+            ("TRACE", "/health"),
+            ("CONNECT", "/health"),
             ("POST", "/unknown"),
         ):
             with self.subTest(method=method, path=path):
@@ -234,6 +245,18 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 415)
         self.assertEqual(body, {"error": "unsupported_audio"})
         run.assert_not_called()
+
+    def test_ffmpeg_undecodable_input_returns_415(self):
+        ffmpeg = SimpleNamespace(returncode=1, stdout=b"", stderr=b"decode failed")
+        with patch.object(self.module.subprocess, "run", return_value=ffmpeg):
+            status, body = self.request(
+                "POST",
+                "/v1/audio/transcriptions",
+                body=b"not audio",
+                content_type="audio/wav",
+            )
+        self.assertEqual(status, 415)
+        self.assertEqual(body, {"error": "unsupported_audio"})
 
     def test_bridge_unavailable_returns_502(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
@@ -256,6 +279,29 @@ class ServerTests(unittest.TestCase):
         ), patch.object(
             self.module.AsyncClient, "from_uri", return_value=TimeoutWyoming()
         ):
+            status, body = self.request(
+                "POST",
+                "/v1/audio/transcriptions",
+                body=b"encoded audio",
+                content_type="audio/wav",
+            )
+        self.assertEqual(status, 504)
+        self.assertEqual(body, {"error": "transcription_timeout"})
+
+    def test_ffmpeg_and_wyoming_share_one_deadline(self):
+        clock = FakeClock()
+        fake = WyomingFake()
+        ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
+
+        def run_ffmpeg(*args, **kwargs):
+            clock.value += 0.02
+            return ffmpeg
+
+        with patch.object(self.module, "TRANSCRIPTION_TIMEOUT", 0.01), patch.object(
+            self.module, "time", SimpleNamespace(monotonic=clock.monotonic), create=True
+        ), patch.object(
+            self.module.subprocess, "run", side_effect=run_ffmpeg
+        ), patch.object(self.module.AsyncClient, "from_uri", return_value=fake):
             status, body = self.request(
                 "POST",
                 "/v1/audio/transcriptions",

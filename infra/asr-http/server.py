@@ -5,6 +5,7 @@ import json
 import os
 import socket
 import subprocess
+import time
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -60,7 +61,14 @@ def _input_format(content_type):
     }.get(mime)
 
 
-def _convert_audio(body, content_type):
+def _remaining(deadline):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TranscriptionTimeout
+    return remaining
+
+
+def _convert_audio(body, content_type, deadline):
     command = ["ffmpeg", "-nostdin", "-loglevel", "error"]
     input_format = _input_format(content_type)
     if input_format:
@@ -87,7 +95,7 @@ def _convert_audio(body, content_type):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
-            timeout=TRANSCRIPTION_TIMEOUT,
+            timeout=_remaining(deadline),
         )
     except subprocess.TimeoutExpired as exc:
         raise TranscriptionTimeout from exc
@@ -95,6 +103,7 @@ def _convert_audio(body, content_type):
         raise UnsupportedAudio from exc
     if result.returncode != 0 or not result.stdout:
         raise UnsupportedAudio
+    _remaining(deadline)
     return result.stdout
 
 
@@ -136,10 +145,10 @@ async def _transcribe(wav_data):
         raise BridgeUnavailable from exc
 
 
-def _transcribe_with_timeout(wav_data):
+def _transcribe_with_timeout(wav_data, deadline):
     try:
         return asyncio.run(
-            asyncio.wait_for(_transcribe(wav_data), timeout=TRANSCRIPTION_TIMEOUT)
+            asyncio.wait_for(_transcribe(wav_data), timeout=_remaining(deadline))
         )
     except asyncio.TimeoutError as exc:
         raise TranscriptionTimeout from exc
@@ -163,7 +172,7 @@ class ASRHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not_found"})
 
     def _authorized(self):
-        expected = os.environ.get("LIFEOS_ASR_TOKEN", "")
+        expected = os.environ.get("ASR_HTTP_TOKEN", "")
         provided = self.headers.get("X-ASR-Token", "")
         return bool(expected) and hmac.compare_digest(provided, expected)
 
@@ -201,11 +210,12 @@ class ASRHandler(BaseHTTPRequestHandler):
             self._send_json(415, {"error": "unsupported_audio"})
             return
         try:
+            deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
             body = self._audio_body()
             if body is None:
                 return
-            wav_data = _convert_audio(body, content_type)
-            text = _transcribe_with_timeout(wav_data)
+            wav_data = _convert_audio(body, content_type, deadline)
+            text = _transcribe_with_timeout(wav_data, deadline)
         except UnsupportedAudio:
             self._send_json(415, {"error": "unsupported_audio"})
             return
@@ -255,6 +265,12 @@ class ASRHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         self._not_found()
+
+    def send_error(self, code, message=None, explain=None):
+        if code == 501:
+            self._not_found()
+            return
+        super().send_error(code, message, explain)
 
 
 def main():
