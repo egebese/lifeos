@@ -110,6 +110,25 @@ class FakeClock:
         return self.value
 
 
+class TricklingReader:
+    def __init__(self, clock):
+        self.clock = clock
+        self.sizes = []
+
+    def read1(self, size):
+        self.sizes.append(size)
+        self.clock.value += 0.006
+        return b"x"
+
+
+class FakeBodyConnection:
+    def __init__(self):
+        self.timeouts = []
+
+    def settimeout(self, value):
+        self.timeouts.append(value)
+
+
 class ServerTests(unittest.TestCase):
     def setUp(self):
         if not SERVER_PATH.is_file():
@@ -209,6 +228,10 @@ class ServerTests(unittest.TestCase):
         self.assertIn("1", command)
         self.assertIn("-c:a", command)
         self.assertIn("pcm_s16le", command)
+        self.assertIn("-t", command)
+        self.assertIn("60", command)
+        self.assertIn("-fs", command)
+        self.assertIn(str(self.module.MAX_DECODED_WAV_BYTES), command)
         self.assertEqual(command[-3:], ["-f", "wav", "pipe:1"])
 
         from wyoming.audio import AudioChunk
@@ -266,6 +289,49 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 415)
         self.assertEqual(body, {"error": "unsupported_audio"})
 
+    def test_missing_ffmpeg_returns_502(self):
+        with patch.object(self.module.subprocess, "run", side_effect=OSError("missing")):
+            status, body = self.request(
+                "POST",
+                "/v1/audio/transcriptions",
+                body=b"not audio",
+                content_type="audio/wav",
+            )
+        self.assertEqual(status, 502)
+        self.assertEqual(body, {"error": "wyoming_failed"})
+
+    def test_decoded_output_over_limit_returns_415(self):
+        ffmpeg = SimpleNamespace(
+            returncode=0,
+            stdout=b"x" * (self.module.MAX_DECODED_WAV_BYTES + 1),
+            stderr=b"",
+        )
+        with patch.object(self.module.subprocess, "run", return_value=ffmpeg):
+            status, body = self.request(
+                "POST",
+                "/v1/audio/transcriptions",
+                body=b"encoded audio",
+                content_type="audio/wav",
+            )
+        self.assertEqual(status, 415)
+        self.assertEqual(body, {"error": "unsupported_audio"})
+
+    def test_saturated_transcription_returns_safe_503(self):
+        with patch.object(self.module, "TRANSCRIPTION_SLOTS") as slots, patch.object(
+            self.module.subprocess, "run"
+        ) as run:
+            slots.acquire.return_value = False
+            status, body = self.request(
+                "POST",
+                "/v1/audio/transcriptions",
+                body=b"encoded audio",
+                content_type="audio/wav",
+            )
+        self.assertEqual(status, 503)
+        self.assertEqual(body, {"error": "busy"})
+        slots.acquire.assert_called_once_with(blocking=False)
+        run.assert_not_called()
+
     def test_bridge_unavailable_returns_503(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
         with patch.object(self.module.subprocess, "run", return_value=ffmpeg), patch.object(
@@ -318,6 +384,37 @@ class ServerTests(unittest.TestCase):
             )
         self.assertEqual(status, 504)
         self.assertEqual(body, {"error": "transcription_timeout"})
+
+    def test_trickled_body_recalculates_bounded_read_deadline(self):
+        clock = FakeClock()
+        reader = TricklingReader(clock)
+        connection = FakeBodyConnection()
+        request = SimpleNamespace(
+            headers={"Content-Length": "4"},
+            connection=connection,
+            rfile=reader,
+            _send_json=Mock(),
+        )
+        deadline = clock.monotonic() + 0.01
+        with patch.object(
+            self.module, "time", SimpleNamespace(monotonic=clock.monotonic)
+        ):
+            with self.assertRaises(self.module.TranscriptionTimeout):
+                self.module.ASRHandler._audio_body(request, deadline)
+        self.assertEqual(reader.sizes, [4, 3])
+        self.assertEqual(len(connection.timeouts), 2)
+        self.assertLess(connection.timeouts[1], connection.timeouts[0])
+
+    def test_malformed_content_length_returns_400(self):
+        status, body = self.request(
+            "POST",
+            "/v1/audio/transcriptions",
+            body=b"",
+            content_type="audio/wav",
+            content_length="not-a-number",
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body, {"error": "bad_request"})
 
     def stalled_request(self, content_length):
         connection = socket.create_connection(

@@ -5,6 +5,7 @@ import json
 import os
 import socket
 import subprocess
+import threading
 import time
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,9 +25,17 @@ MAX_UPLOAD = 15 * 1024 * 1024
 HEALTH_TIMEOUT = 2.0
 TRANSCRIPTION_TIMEOUT = 45.0
 PCM_CHUNK_BYTES = 1024
+BODY_READ_CHUNK_BYTES = 64 * 1024
+MAX_AUDIO_SECONDS = 60
+MAX_DECODED_WAV_BYTES = 2_000_000
+TRANSCRIPTION_SLOTS = threading.BoundedSemaphore(2)
 
 
 class UnsupportedAudio(Exception):
+    pass
+
+
+class ProcessFailure(Exception):
     pass
 
 
@@ -77,12 +86,16 @@ def _convert_audio(body, content_type, deadline):
         (
             "-i",
             "pipe:0",
+            "-t",
+            str(MAX_AUDIO_SECONDS),
             "-ar",
             "16000",
             "-ac",
             "1",
             "-c:a",
             "pcm_s16le",
+            "-fs",
+            str(MAX_DECODED_WAV_BYTES),
             "-f",
             "wav",
             "pipe:1",
@@ -100,9 +113,11 @@ def _convert_audio(body, content_type, deadline):
     except subprocess.TimeoutExpired as exc:
         raise TranscriptionTimeout from exc
     except OSError as exc:
-        raise UnsupportedAudio from exc
+        raise ProcessFailure from exc
     _remaining(deadline)
     if result.returncode != 0 or not result.stdout:
+        raise UnsupportedAudio
+    if len(result.stdout) > MAX_DECODED_WAV_BYTES:
         raise UnsupportedAudio
     return result.stdout
 
@@ -193,29 +208,39 @@ class ASRHandler(BaseHTTPRequestHandler):
     def _audio_body(self, deadline):
         try:
             length = int(self.headers.get("Content-Length", "0"))
-        except ValueError as exc:
-            raise UnsupportedAudio from exc
+        except (TypeError, ValueError):
+            self._send_json(400, {"error": "bad_request"})
+            return None
         if length <= 0:
             self._send_json(400, {"error": "empty_audio"})
             return None
         if length > MAX_UPLOAD:
             self._send_json(413, {"error": "too_large"})
             return None
-        try:
-            self.connection.settimeout(_remaining(deadline))
-            body = self.rfile.read(length)
-        except (OSError, TimeoutError) as exc:
-            raise TranscriptionTimeout from exc
-        if len(body) != length:
-            self._send_json(400, {"error": "empty_audio"})
-            return None
-        return body
+        body = bytearray()
+        while len(body) < length:
+            try:
+                self.connection.settimeout(_remaining(deadline))
+                chunk = self.rfile.read1(
+                    min(BODY_READ_CHUNK_BYTES, length - len(body))
+                )
+            except (OSError, TimeoutError) as exc:
+                raise TranscriptionTimeout from exc
+            if not chunk:
+                self._send_json(400, {"error": "empty_audio"})
+                return None
+            body.extend(chunk)
+        _remaining(deadline)
+        return bytes(body)
 
     def _transcription(self):
         deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
         content_type = self.headers.get("Content-Type", "")
         if not content_type.lower().startswith("audio/"):
             self._send_json(415, {"error": "unsupported_audio"})
+            return
+        if not TRANSCRIPTION_SLOTS.acquire(blocking=False):
+            self._send_json(503, {"error": "busy"})
             return
         try:
             body = self._audio_body(deadline)
@@ -225,6 +250,9 @@ class ASRHandler(BaseHTTPRequestHandler):
             text = _transcribe_with_timeout(wav_data, deadline)
         except UnsupportedAudio:
             self._send_json(415, {"error": "unsupported_audio"})
+            return
+        except ProcessFailure:
+            self._send_json(502, {"error": "wyoming_failed"})
             return
         except BridgeUnavailable:
             self._send_json(503, {"error": "wyoming_unavailable"})
@@ -238,6 +266,8 @@ class ASRHandler(BaseHTTPRequestHandler):
         except Exception:
             self._send_json(502, {"error": "wyoming_failed"})
             return
+        finally:
+            TRANSCRIPTION_SLOTS.release()
         if not text:
             self._send_json(422, {"error": "empty_transcript"})
             return
