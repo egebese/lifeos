@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import path from "node:path";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
-import { visionJson, uploadLocal } from "@/lib/ai/client";
+import { visionJson, localAiRouteFailure, uploadLocal } from "@/lib/ai/client";
 import { foodVisionPrompt } from "@/lib/ai/prompts";
 import { FoodVisionSchema } from "@/lib/ai/schemas";
 import { uploadPath } from "@/lib/uploads";
@@ -36,10 +36,11 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ estimate: out });
   } catch (e) {
-    console.error("[food/estimate]", e);
+    const failure = localAiRouteFailure(e);
+    console.error("[food/estimate]", failure.detail);
     return NextResponse.json(
-      { error: "estimate_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: "estimate_failed", detail: failure.detail },
+      { status: failure.status },
     );
   }
 }

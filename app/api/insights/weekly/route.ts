@@ -11,7 +11,7 @@ import {
   workouts,
   workoutSets,
 } from "@/lib/db/schema";
-import { chatJson } from "@/lib/ai/client";
+import { chatJson, localAiRouteFailure } from "@/lib/ai/client";
 import { weeklyInsightsPrompt } from "@/lib/ai/prompts";
 import { InsightsSchema } from "@/lib/ai/schemas";
 import { bmr, recommendedKcal, tdee } from "@/lib/nutrition";
@@ -143,10 +143,11 @@ export async function POST() {
     });
     return NextResponse.json({ insights: out });
   } catch (e) {
-    console.error("[insights/weekly]", e);
+    const failure = localAiRouteFailure(e);
+    console.error("[insights/weekly]", failure.detail);
     return NextResponse.json(
-      { error: "insights_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: "insights_failed", detail: failure.detail },
+      { status: failure.status },
     );
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
-import { chatJson } from "@/lib/ai/client";
+import { chatJson, localAiRouteFailure } from "@/lib/ai/client";
 import { mealParserPrompt } from "@/lib/ai/prompts";
 import { MealLogSchema } from "@/lib/ai/schemas";
 
@@ -45,10 +45,11 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ parsed: out });
   } catch (e) {
-    console.error("[food/parse-meal]", e);
+    const failure = localAiRouteFailure(e);
+    console.error("[food/parse-meal]", failure.detail);
     return NextResponse.json(
-      { error: "parse_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: "parse_failed", detail: failure.detail },
+      { status: failure.status },
     );
   }
 }

@@ -100,9 +100,10 @@ type OpenAiMessage = {
 type ModelConfig = { baseUrl: string; model: string };
 
 function config(): ModelConfig {
+  const configuredModel = process.env.LLAMA_CPP_MODEL;
   return {
     baseUrl: (process.env.LLAMA_CPP_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, ""),
-    model: process.env.LLAMA_CPP_MODEL || DEFAULT_MODEL,
+    model: configuredModel === undefined ? DEFAULT_MODEL : configuredModel,
   };
 }
 
@@ -123,7 +124,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function redactForLog(value: unknown): unknown {
+export function redactForLog(value: unknown): unknown {
   if (typeof value === "string") {
     const match = value.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
     if (match) return { image: match[1], bytes: Buffer.from(match[2], "base64").length };
@@ -163,9 +164,19 @@ function localErrorCode(error: unknown): string {
   return error instanceof LocalAiError ? error.code : "local_ai_unavailable";
 }
 
+export function localAiRouteFailure(error: unknown): { status: 503 | 502; detail: string } {
+  if (!(error instanceof LocalAiError)) return { status: 503, detail: "local_ai_unavailable" };
+  return {
+    status: error.code === "local_ai_unavailable" ? 503 : 502,
+    detail: error.code,
+  };
+}
+
 const validationCache = new Map<string, Promise<void>>();
 
 async function validateModel({ baseUrl, model }: ModelConfig): Promise<void> {
+  if (model !== DEFAULT_MODEL) throw new LocalAiMissingModelError();
+
   let response: Response;
   try {
     response = await fetch(endpoint(baseUrl, "models"), { signal: AbortSignal.timeout(5000) });

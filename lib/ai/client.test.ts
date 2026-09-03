@@ -9,9 +9,12 @@ import {
   chat,
   chatJson,
   LocalAiInvalidResponseError,
+  LocalAiInvalidJsonError,
   LocalAiMissingCapabilityError,
   LocalAiMissingModelError,
   LocalAiTimeoutError,
+  localAiRouteFailure,
+  redactForLog,
   uploadLocal,
   vision,
 } from "./client.js";
@@ -134,9 +137,73 @@ test("model validation has named errors for missing model and capability", async
   );
 });
 
+test("rejects a configured model id that is not the verified model", async () => {
+  process.env.LLAMA_CPP_BASE_URL = "http://127.0.0.1:65531/v1";
+  process.env.LLAMA_CPP_MODEL = `${MODEL}-unverified`;
+  let fetchCalls = 0;
+  globalThis.fetch = async () => {
+    fetchCalls++;
+    throw new Error("the model list must not be requested");
+  };
+
+  await assert.rejects(
+    () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+    (error: unknown) => error instanceof LocalAiMissingModelError && error.code === "local_ai_unavailable",
+  );
+  assert.equal(fetchCalls, 0);
+  process.env.LLAMA_CPP_MODEL = MODEL;
+});
+
+test("caches a failed model validation for the process lifetime", async () => {
+  let modelCalls = 0;
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") {
+        modelCalls++;
+        return sendJson(res, { data: [{ id: "other" }], models: [] });
+      }
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      const run = () => chat({ userId: "u", kind: "freeform", prompt: "x" });
+      await assert.rejects(run, (error: unknown) => error instanceof LocalAiMissingModelError);
+      await assert.rejects(run, (error: unknown) => error instanceof LocalAiMissingModelError);
+      assert.equal(modelCalls, 1);
+    },
+  );
+});
+
+test("redacts image data URLs and audio bytes before AI logging", () => {
+  const image = "data:image/jpeg;base64,/9j/";
+  const audio = Buffer.from("private audio bytes");
+  const redacted = redactForLog({ image, audio, nested: [image, audio] });
+
+  assert.deepEqual(redacted, {
+    image: { image: "image/jpeg", bytes: 3 },
+    audio: { bytes: audio.length },
+    nested: [{ image: "image/jpeg", bytes: 3 }, { bytes: audio.length }],
+  });
+  assert.doesNotMatch(JSON.stringify(redacted), /private audio bytes|\/9j\//);
+});
+
+test("maps local AI failures to safe route status and detail", () => {
+  assert.deepEqual(localAiRouteFailure(new LocalAiTimeoutError()), {
+    status: 503,
+    detail: "local_ai_unavailable",
+  });
+  assert.deepEqual(localAiRouteFailure(new LocalAiInvalidJsonError()), {
+    status: 502,
+    detail: "local_ai_invalid_json",
+  });
+  assert.deepEqual(localAiRouteFailure(new Error("secret upstream response")), {
+    status: 503,
+    detail: "local_ai_unavailable",
+  });
+});
+
 test("model-list timeout is a typed unavailable error", async () => {
   process.env.LLAMA_CPP_BASE_URL = "http://127.0.0.1:65530/v1";
-  process.env.LLAMA_CPP_MODEL = `${MODEL}-timeout`;
+  process.env.LLAMA_CPP_MODEL = MODEL;
   globalThis.fetch = async () => {
     throw new DOMException("timed out", "TimeoutError");
   };
