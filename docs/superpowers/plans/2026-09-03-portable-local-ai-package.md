@@ -35,6 +35,7 @@
 - [ ] Implement source copying with exclusions and no deletion of target files, preserving a pre-existing private config and runtime data.
 - [ ] Add a stable configurable Compose volume prefix and render the user systemd unit with configured paths plus an explicit `EnvironmentFile=`.
 - [ ] Preflight config/dependencies and Compose before restart; leave persistent state untouched on preflight/build failure.
+- [ ] Enforce mode 600 on the private config, reject a config located inside the source tree, and test that the private file is never copied.
 - [ ] Enable linger when possible, reload the user manager, and enable/start only the LifeOS bridge.
 - [ ] Run Compose with `--env-file` and `up -d --build`; do not remove volumes.
 - [ ] Make `update.sh` a small wrapper that reruns the idempotent installer.
@@ -57,6 +58,7 @@
 
 - [ ] Add a client test proving a non-default configured model id is accepted when the server advertises the exact id and multimodal capability.
 - [ ] Add a bridge test proving configured bind/port/Wyoming values are used by the server factory or request path.
+- [ ] Add installer/config tests for stable volume names, generic runtime defaults, TTS variable propagation, and dry-run non-invocation of Docker/systemd.
 - [ ] Run the focused tests before implementation and confirm the portability cases fail.
 
 ### Task 5: Remove hard-coded provider restrictions
@@ -67,9 +69,10 @@
 - Modify: `docker-compose.yml`
 
 - [ ] Remove the equality check against the original Qwen model path while retaining exact `/v1/models` id and multimodal metadata validation.
+- [ ] Replace personal fallback URLs/model values in `lib/ai/client.ts` with generic localhost/empty fallbacks that fail safely when not configured.
 - [ ] Read `ASR_HTTP_HOST`, `ASR_HTTP_PORT`, and `WYOMING_URI` with safe generic defaults; keep English and all existing limits/error mappings.
 - [ ] Pass `TTS_BASE_URL` through Compose for provider configuration while documenting that current LifeOS routes do not consume it.
-- [ ] Replace personal deployment defaults in Compose with generic localhost examples or required config values.
+- [ ] Replace personal deployment defaults in Compose with generic localhost examples or required config values, and set explicit volume names from `LIFEOS_VOLUME_PREFIX`.
 - [ ] Make model validation accept arbitrary exact configured ids while retaining multimodal capability checks.
 - [ ] Run focused tests and confirm portability cases pass.
 
@@ -95,7 +98,7 @@
 
 ---
 
-## Chunk 4: Verification and rollout
+## Chunk 4: Verification
 
 ### Task 7: Run full verification
 
@@ -106,10 +109,3 @@
 - [ ] Run Compose config with a supplied generic config.
 - [ ] Run a local dry-run install into a temporary target and verify rendered unit/config preservation.
 - [ ] Check the release worktree is clean except committed changes and no secrets/config files are tracked.
-
-### Task 8: Update the live deployment
-
-- [ ] Create a private config on `192.168.2.61` from the template using the existing verified endpoints, without printing its token or session secret.
-- [ ] Run the installer/update path against the live target only after local checks pass.
-- [ ] Verify LifeOS, the user bridge, llama.cpp, existing NeMo/STT, existing TTS, and Home Assistant services remain active.
-- [ ] Verify login/session, ASR health/auth, model id/capability, and Docker health.
