@@ -1,0 +1,14 @@
+[Unit]
+Description=LifeOS ASR HTTP bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/home/dogda/lifeos/asr-http.env
+ExecStart=/home/dogda/wyoming-onnx-asr/.venv/bin/python /home/dogda/lifeos/infra/asr-http/server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

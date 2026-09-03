@@ -1,0 +1,267 @@
+import asyncio
+import hmac
+import io
+import json
+import os
+import socket
+import subprocess
+import wave
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+from wyoming.asr import Transcribe, Transcript
+from wyoming.audio import AudioStart, AudioStop, wav_to_chunks
+from wyoming.client import AsyncClient
+from wyoming.error import Error
+
+
+BIND_HOST = "0.0.0.0"
+BIND_PORT = 10202
+WYOMING_HOST = "127.0.0.1"
+WYOMING_PORT = 10300
+WYOMING_URI = f"tcp://{WYOMING_HOST}:{WYOMING_PORT}"
+MAX_UPLOAD = 15 * 1024 * 1024
+HEALTH_TIMEOUT = 2.0
+TRANSCRIPTION_TIMEOUT = 45.0
+PCM_CHUNK_BYTES = 1024
+
+
+class UnsupportedAudio(Exception):
+    pass
+
+
+class BridgeUnavailable(Exception):
+    pass
+
+
+class AsrFailure(Exception):
+    pass
+
+
+class TranscriptionTimeout(Exception):
+    pass
+
+
+def _json_bytes(value):
+    return json.dumps(value, separators=(",", ":")).encode("utf-8")
+
+
+def _input_format(content_type):
+    mime = content_type.split(";", 1)[0].strip().lower()
+    return {
+        "audio/wav": "wav",
+        "audio/x-wav": "wav",
+        "audio/webm": "webm",
+        "audio/ogg": "ogg",
+        "audio/mpeg": "mp3",
+        "audio/mp4": "mp4",
+        "audio/x-m4a": "mp4",
+        "audio/aac": "aac",
+        "audio/flac": "flac",
+    }.get(mime)
+
+
+def _convert_audio(body, content_type):
+    command = ["ffmpeg", "-nostdin", "-loglevel", "error"]
+    input_format = _input_format(content_type)
+    if input_format:
+        command.extend(("-f", input_format))
+    command.extend(
+        (
+            "-i",
+            "pipe:0",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+            "-f",
+            "wav",
+            "pipe:1",
+        )
+    )
+    try:
+        result = subprocess.run(
+            command,
+            input=body,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=TRANSCRIPTION_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise TranscriptionTimeout from exc
+    except OSError as exc:
+        raise UnsupportedAudio from exc
+    if result.returncode != 0 or not result.stdout:
+        raise UnsupportedAudio
+    return result.stdout
+
+
+async def _transcribe(wav_data):
+    connected = False
+    try:
+        client = AsyncClient.from_uri(WYOMING_URI)
+        try:
+            async with client:
+                connected = True
+                await client.write_event(Transcribe(language="en").event())
+                with wave.open(io.BytesIO(wav_data), "rb") as wav_file:
+                    await client.write_event(
+                        AudioStart(rate=16000, width=2, channels=1).event()
+                    )
+                    for chunk in wav_to_chunks(
+                        wav_file, samples_per_chunk=PCM_CHUNK_BYTES // 2
+                    ):
+                        await client.write_event(chunk.event())
+                    await client.write_event(AudioStop().event())
+
+                while True:
+                    event = await client.read_event()
+                    if event is None:
+                        raise AsrFailure
+                    if Transcript.is_type(event.type):
+                        return Transcript.from_event(event).text.strip()
+                    if Error.is_type(event.type):
+                        raise AsrFailure
+        except (BridgeUnavailable, AsrFailure):
+            raise
+        except Exception as exc:
+            if connected:
+                raise AsrFailure from exc
+            raise BridgeUnavailable from exc
+    except (BridgeUnavailable, AsrFailure):
+        raise
+    except Exception as exc:
+        raise BridgeUnavailable from exc
+
+
+def _transcribe_with_timeout(wav_data):
+    try:
+        return asyncio.run(
+            asyncio.wait_for(_transcribe(wav_data), timeout=TRANSCRIPTION_TIMEOUT)
+        )
+    except asyncio.TimeoutError as exc:
+        raise TranscriptionTimeout from exc
+
+
+class ASRHandler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        return
+
+    def _send_json(self, status, value):
+        body = _json_bytes(value)
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.wfile.write(body)
+        self.close_connection = True
+
+    def _not_found(self):
+        self._send_json(404, {"error": "not_found"})
+
+    def _authorized(self):
+        expected = os.environ.get("LIFEOS_ASR_TOKEN", "")
+        provided = self.headers.get("X-ASR-Token", "")
+        return bool(expected) and hmac.compare_digest(provided, expected)
+
+    def _health(self):
+        try:
+            connection = socket.create_connection(
+                (WYOMING_HOST, WYOMING_PORT), timeout=HEALTH_TIMEOUT
+            )
+            connection.close()
+        except OSError:
+            self._send_json(503, {"error": "wyoming_unavailable"})
+            return
+        self._send_json(200, {"ok": True})
+
+    def _audio_body(self):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as exc:
+            raise UnsupportedAudio from exc
+        if length <= 0:
+            self._send_json(400, {"error": "empty_audio"})
+            return None
+        if length > MAX_UPLOAD:
+            self._send_json(413, {"error": "too_large"})
+            return None
+        body = self.rfile.read(length)
+        if len(body) != length:
+            self._send_json(400, {"error": "empty_audio"})
+            return None
+        return body
+
+    def _transcription(self):
+        content_type = self.headers.get("Content-Type", "")
+        if not content_type.lower().startswith("audio/"):
+            self._send_json(415, {"error": "unsupported_audio"})
+            return
+        try:
+            body = self._audio_body()
+            if body is None:
+                return
+            wav_data = _convert_audio(body, content_type)
+            text = _transcribe_with_timeout(wav_data)
+        except UnsupportedAudio:
+            self._send_json(415, {"error": "unsupported_audio"})
+            return
+        except BridgeUnavailable:
+            self._send_json(502, {"error": "wyoming_failed"})
+            return
+        except TranscriptionTimeout:
+            self._send_json(504, {"error": "transcription_timeout"})
+            return
+        except AsrFailure:
+            self._send_json(503, {"error": "wyoming_unavailable"})
+            return
+        except Exception:
+            self._send_json(502, {"error": "wyoming_failed"})
+            return
+        if not text:
+            self._send_json(422, {"error": "empty_transcript"})
+            return
+        self._send_json(200, {"text": text})
+
+    def do_POST(self):
+        if self.path not in ("/health", "/v1/audio/transcriptions"):
+            self._not_found()
+            return
+        if not self._authorized():
+            self._send_json(401, {"error": "unauthorized"})
+            return
+        if self.path == "/health":
+            self._health()
+            return
+        self._transcription()
+
+    def do_GET(self):
+        self._not_found()
+
+    def do_HEAD(self):
+        self._not_found()
+
+    def do_OPTIONS(self):
+        self._not_found()
+
+    def do_PATCH(self):
+        self._not_found()
+
+    def do_PUT(self):
+        self._not_found()
+
+    def do_DELETE(self):
+        self._not_found()
+
+
+def main():
+    httpd = ThreadingHTTPServer((BIND_HOST, BIND_PORT), ASRHandler)
+    httpd.daemon_threads = True
+    httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    main()
