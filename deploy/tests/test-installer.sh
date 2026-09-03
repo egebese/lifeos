@@ -91,6 +91,15 @@ fi
 grep -Fq 'must not contain' "$tmp_dir/unsafe.out" || fail "unsafe path error was unclear"
 pass "dry-run rejects unsafe unit paths"
 
+percent="$tmp_dir/percent.env"
+sed "s|^LIFEOS_DIR=.*|LIFEOS_DIR='$tmp_dir/with%percent'|" "$config" >"$percent"
+chmod 600 "$percent"
+if TEST_MODE=1 bash "$installer" --dry-run "$percent" >"$tmp_dir/percent.out" 2>&1; then
+  fail "percent path unexpectedly succeeded"
+fi
+grep -Fq 'must not contain' "$tmp_dir/percent.out" || fail "percent path error was unclear"
+pass "dry-run rejects percent in unit paths"
+
 foreign="$tmp_dir/foreign"
 mkdir -p "$foreign"
 printf 'do not overwrite\n' >"$foreign/important.txt"
@@ -100,15 +109,16 @@ chmod 600 "$foreign_config"
 if TEST_MODE=1 bash "$installer" "$foreign_config" >"$tmp_dir/foreign.out" 2>&1; then
   fail "non-LifeOS target unexpectedly succeeded"
 fi
-grep -Fq 'not a LifeOS directory' "$tmp_dir/foreign.out" || fail "foreign target error was unclear"
+grep -Fq 'missing .lifeos-install marker' "$tmp_dir/foreign.out" || fail "foreign target error was unclear"
 grep -Fxq 'do not overwrite' "$foreign/important.txt" || fail "foreign target file changed"
 pass "normal install rejects non-LifeOS target"
 
 mkdir -p "$target"
 printf 'keep this target config\n' >"$target/config.env"
-touch "$target/docker-compose.yml" "$target/package.json"
+touch "$target/.lifeos-install"
 TEST_MODE=1 bash "$installer" "$config" >/dev/null 2>&1 || fail "normal test-mode install failed"
 [[ -f "$target/README.md" ]] || fail "source marker was not copied"
+[[ -f "$target/.lifeos-install" ]] || fail "install marker was not preserved"
 grep -Fxq 'keep this target config' "$target/config.env" || fail "target config was overwritten"
 [[ -f "$systemd_dir/lifeos-asr-http.service" ]] || fail "service was not rendered"
 pass "normal install copies source and preserves target config"

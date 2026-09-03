@@ -33,9 +33,9 @@ TTS_BASE_URL=${TTS_BASE_URL:-}
 
 reject_unit_unsafe() {
   local name=$1 value=$2
-  [[ $value != *\\* && $value != *\"* && $value != *\|* && $value != *\&* &&
+  [[ $value != *\\* && $value != *\"* && $value != *\|* && $value != *\&* && $value != *%* &&
     ! $value =~ [[:space:][:cntrl:]] ]] || {
-    echo "$name must not contain backslash, quote, pipe, ampersand, whitespace, or control characters" >&2
+    echo "$name must not contain backslash, quote, pipe, ampersand, percent, whitespace, or control characters" >&2
     exit 1
   }
 }
@@ -72,16 +72,15 @@ if [[ $LIFEOS_DIR != "$source_dir" ]]; then
   shopt -s nullglob dotglob
   target_entries=("$LIFEOS_DIR"/*)
   shopt -u nullglob dotglob
-  if ((${#target_entries[@]})) && {
-    [[ ! -f "$LIFEOS_DIR/docker-compose.yml" ]] || [[ ! -f "$LIFEOS_DIR/package.json" ]]
-  }; then
-    echo 'existing non-empty target is not a LifeOS directory (missing docker-compose.yml or package.json)' >&2
+  if ((${#target_entries[@]})) && [[ ! -f "$LIFEOS_DIR/.lifeos-install" ]]; then
+    echo 'existing non-empty target is not a LifeOS directory (missing .lifeos-install marker)' >&2
     exit 1
   fi
   tar -C "$source_dir" \
     --exclude=.git --exclude=.env --exclude=node_modules --exclude=.next \
-    --exclude=uploads --exclude='*/uploads' --exclude='config.env' \
+    --exclude=uploads --exclude='*/uploads' --exclude='config.env' --exclude=.lifeos-install \
     -cf - . | tar -C "$LIFEOS_DIR" -xf -
+  touch "$LIFEOS_DIR/.lifeos-install"
 fi
 
 service_template="$source_dir/deploy/systemd/lifeos-asr-http.service.in"
