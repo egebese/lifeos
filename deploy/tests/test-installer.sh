@@ -88,11 +88,25 @@ chmod 600 "$unsafe"
 if TEST_MODE=1 bash "$installer" --dry-run "$unsafe" >"$tmp_dir/unsafe.out" 2>&1; then
   fail "whitespace path unexpectedly succeeded"
 fi
-grep -Fq 'whitespace or control' "$tmp_dir/unsafe.out" || fail "unsafe path error was unclear"
+grep -Fq 'must not contain' "$tmp_dir/unsafe.out" || fail "unsafe path error was unclear"
 pass "dry-run rejects unsafe unit paths"
+
+foreign="$tmp_dir/foreign"
+mkdir -p "$foreign"
+printf 'do not overwrite\n' >"$foreign/important.txt"
+foreign_config="$tmp_dir/foreign.env"
+sed "s|^LIFEOS_DIR=.*|LIFEOS_DIR=$foreign|" "$config" >"$foreign_config"
+chmod 600 "$foreign_config"
+if TEST_MODE=1 bash "$installer" "$foreign_config" >"$tmp_dir/foreign.out" 2>&1; then
+  fail "non-LifeOS target unexpectedly succeeded"
+fi
+grep -Fq 'not a LifeOS directory' "$tmp_dir/foreign.out" || fail "foreign target error was unclear"
+grep -Fxq 'do not overwrite' "$foreign/important.txt" || fail "foreign target file changed"
+pass "normal install rejects non-LifeOS target"
 
 mkdir -p "$target"
 printf 'keep this target config\n' >"$target/config.env"
+touch "$target/docker-compose.yml" "$target/package.json"
 TEST_MODE=1 bash "$installer" "$config" >/dev/null 2>&1 || fail "normal test-mode install failed"
 [[ -f "$target/README.md" ]] || fail "source marker was not copied"
 grep -Fxq 'keep this target config' "$target/config.env" || fail "target config was overwritten"

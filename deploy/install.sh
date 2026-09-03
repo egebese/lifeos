@@ -18,10 +18,8 @@ config_mode=$(stat -c '%a' "$config_file")
 }
 
 # The config is explicitly a trusted shell-style file; never print its values.
-set -a
 # shellcheck disable=SC1090
 source "$config_file"
-set +a
 
 required=(LIFEOS_DIR LIFEOS_VOLUME_PREFIX NEXT_PUBLIC_APP_URL LLAMA_CPP_BASE_URL
   LLAMA_CPP_MODEL ASR_HTTP_URL ASR_HTTP_TOKEN ADMIN_EMAIL ADMIN_PASSWORD SESSION_SECRET
@@ -35,8 +33,9 @@ TTS_BASE_URL=${TTS_BASE_URL:-}
 
 reject_unit_unsafe() {
   local name=$1 value=$2
-  [[ ! $value =~ [[:space:][:cntrl:]] ]] || {
-    echo "$name must not contain whitespace or control characters" >&2
+  [[ $value != *\\* && $value != *\"* && $value != *\|* && $value != *\&* &&
+    ! $value =~ [[:space:][:cntrl:]] ]] || {
+    echo "$name must not contain backslash, quote, pipe, ampersand, whitespace, or control characters" >&2
     exit 1
   }
 }
@@ -70,6 +69,15 @@ fi
 
 mkdir -p "$LIFEOS_DIR" "$USER_SYSTEMD_DIR"
 if [[ $LIFEOS_DIR != "$source_dir" ]]; then
+  shopt -s nullglob dotglob
+  target_entries=("$LIFEOS_DIR"/*)
+  shopt -u nullglob dotglob
+  if ((${#target_entries[@]})) && {
+    [[ ! -f "$LIFEOS_DIR/docker-compose.yml" ]] || [[ ! -f "$LIFEOS_DIR/package.json" ]]
+  }; then
+    echo 'existing non-empty target is not a LifeOS directory (missing docker-compose.yml or package.json)' >&2
+    exit 1
+  fi
   tar -C "$source_dir" \
     --exclude=.git --exclude=.env --exclude=node_modules --exclude=.next \
     --exclude=uploads --exclude='*/uploads' --exclude='config.env' \
@@ -106,8 +114,9 @@ if [[ ${TEST_MODE:-0} != 1 ]]; then
   }
   health_check login "${NEXT_PUBLIC_APP_URL%/}/login"
   health_check llama-models "${LLAMA_CPP_BASE_URL%/}/models"
-  if ! curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
-    -H "X-ASR-Token: $ASR_HTTP_TOKEN" -o /dev/null "${ASR_HTTP_URL%/}/health"; then
+  if ! printf 'X-ASR-Token: %s\n' "$ASR_HTTP_TOKEN" | \
+    curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
+      -H @- -o /dev/null "${ASR_HTTP_URL%/}/health"; then
     echo 'health check failed: asr-health' >&2
     exit 1
   fi
