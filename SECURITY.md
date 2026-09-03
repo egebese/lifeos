@@ -40,11 +40,14 @@ Out of scope:
 
 ## Hardening checklist for self-hosters
 
+Local AI runs through the preloaded Qwen vision llama.cpp service and the existing NeMo/Wyoming ASR service behind the local HTTP bridge; no external AI API key is required.
+
 If you deploy LifeOS publicly:
 
 1. **Rotate `SESSION_SECRET` and `ADMIN_PASSWORD` immediately** after first login.
 2. Put the app behind HTTPS (Cloudflare proxy or Let's Encrypt at your reverse proxy).
 3. Restrict `POST /api/whoop/sync` if you expose it for cron — use Whoop's webhook with HMAC verification instead where possible.
-4. Use a strong `FAL_KEY` and treat it as a billing credential — anyone with the key can spend your fal credits.
-5. Back up your Postgres volume regularly. The `ai_messages` table contains your prompts and responses.
-6. Keep Docker images updated — `docker compose pull && docker compose up -d --build` periodically.
+4. **Protect `ASR_HTTP_TOKEN`** — use a random value, store it only in the bridge environment file and uncommitted LifeOS `.env`, and keep the bridge reachable only from the trusted LAN.
+5. Keep the llama.cpp and ASR endpoints on the trusted LAN; do not expose ports `8081`, `10202`, or the existing Wyoming port `10300` directly to the Internet.
+6. Back up your Postgres volume regularly. The `ai_messages` table contains your prompts and responses.
+7. Keep Docker images updated — `docker compose pull && docker compose up -d --build` periodically.

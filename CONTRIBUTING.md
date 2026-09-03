@@ -11,14 +11,14 @@ Thanks for your interest! LifeOS is a self-hosted, single-admin personal tracker
 - New exercise dataset translations / corrections
 - New `lib/ai/prompts.ts` improvements (better food/plan/program prompts)
 - Documentation, screenshots, deployment guides for other PaaS (Railway, Fly, Render, Hetzner Coolify, etc.)
-- Additional fal.ai endpoint integrations (e.g. swapping the default model, adding a new vision pipeline)
+- Local AI integrations and improvements to the configured model/service pipelines
 - New chart types in `/analysis`
 - Whoop sync edge cases
 
 **Out of scope** (please open an issue / discussion first; will likely be declined as a PR):
 
 - Multi-tenant / multi-user auth — LifeOS is intentionally single-admin. If you need this, fork it.
-- Replacing fal.ai with another AI provider at the framework level. (Adding a *configurable* alternative behind the same `chat()` / `vision()` interface is fine; ripping fal out isn't.)
+- Replacing the local AI stack with another provider at the framework level. (Adding a *configurable* alternative behind the same `chat()` / `vision()` interface is fine; discuss the design first.)
 - Switching the database away from Postgres.
 - Mobile native apps (iOS/Android shells). The PWA is intentionally web-first.
 - Major UI redesigns away from the Nothing-design aesthetic.
@@ -32,7 +32,7 @@ git clone https://github.com/egebese/lifeos.git
 cd lifeos
 
 cp .env.example .env
-# Fill in SESSION_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD, FAL_KEY
+# Fill in SESSION_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD, ASR_HTTP_TOKEN
 
 docker compose up -d db
 pnpm install
@@ -42,7 +42,7 @@ pnpm seed:exercises
 pnpm dev
 ```
 
-You'll need a [fal.ai](https://fal.ai/dashboard/keys) key to test any AI feature. The free trial credits are enough for development — every call gets logged to the `ai_messages` table so you can audit usage.
+The default `.env.example` points at the preloaded Qwen vision llama.cpp service and the local ASR HTTP bridge. Set `ASR_HTTP_TOKEN` to the bridge's token before testing voice features; no external AI API key is needed. AI calls are logged to the `ai_messages` table for troubleshooting and audit.
 
 ## Code conventions
 
@@ -51,7 +51,7 @@ You'll need a [fal.ai](https://fal.ai/dashboard/keys) key to test any AI feature
 - **Drizzle for all DB access.** No raw SQL except in migrations.
 - **Zod schemas at API boundaries.** Look at `lib/ai/schemas.ts` for the pattern.
 - **No new env vars without a default + `.env.example` update.**
-- **AI calls go through `lib/ai/client.ts`.** Don't call `@fal-ai/client` directly from route handlers — the wrapper logs cost and errors to `ai_messages`.
+- **AI calls go through `lib/ai/client.ts`.** Keep route handlers on the shared local llama.cpp/ASR client so errors and safe request metadata are recorded in `ai_messages`.
 - **Mobile-first.** Test at 375px width before desktop. Use the existing `components/nothing/*` primitives where possible.
 
 ## Before you push
@@ -69,7 +69,7 @@ All three must pass. CI runs the same on PRs.
 - One concern per PR. A bug fix + a refactor + a new feature = three PRs.
 - Commit messages: imperative present tense — `add voice transcription endpoint`, not `added` / `adds`.
 - PR description: what changed, why, and **how you tested it** (screenshots for UI, curl/log snippets for API).
-- If you touched a fal.ai endpoint, mention the cost impact (rough $/call) in the PR.
+- If you touched a local AI endpoint or model integration, mention the endpoint/model and any latency or resource impact in the PR.
 
 ## Reporting bugs
 
@@ -81,7 +81,7 @@ Open an issue with:
 4. Environment: Node version, deploy target (Docker/Coolify/local), browser if UI.
 5. Relevant logs — `docker compose logs web` is your friend.
 
-**Do not include `FAL_KEY`, session cookies, or DB connection strings** in issues. Redact them.
+**Do not include `ASR_HTTP_TOKEN`, session cookies, or DB connection strings** in issues. Redact them.
 
 ## Reporting security issues
 

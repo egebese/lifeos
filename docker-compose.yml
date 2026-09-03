@@ -27,12 +27,15 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:-dev_secret_change_me_dev_secret_change_me_dev_secret_change_me}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
-      FAL_KEY: ${FAL_KEY:-}
+      LLAMA_CPP_BASE_URL: ${LLAMA_CPP_BASE_URL:-http://192.168.2.11:8081/v1}
+      LLAMA_CPP_MODEL: ${LLAMA_CPP_MODEL:-/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf}
+      ASR_HTTP_URL: ${ASR_HTTP_URL:-http://192.168.2.61:10202}
+      ASR_HTTP_TOKEN: ${ASR_HTTP_TOKEN:-}
       WHOOP_CLIENT_ID: ${WHOOP_CLIENT_ID:-}
       WHOOP_CLIENT_SECRET: ${WHOOP_CLIENT_SECRET:-}
       WHOOP_REDIRECT_URI: ${WHOOP_REDIRECT_URI:-http://localhost:3000/api/whoop/callback}
       WHOOP_WEBHOOK_SECRET: ${WHOOP_WEBHOOK_SECRET:-}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://192.168.2.61:3000}
       ENABLE_CRON: ${ENABLE_CRON:-0}
       TZ: Europe/Istanbul
     ports:
