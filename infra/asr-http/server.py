@@ -101,9 +101,9 @@ def _convert_audio(body, content_type, deadline):
         raise TranscriptionTimeout from exc
     except OSError as exc:
         raise UnsupportedAudio from exc
+    _remaining(deadline)
     if result.returncode != 0 or not result.stdout:
         raise UnsupportedAudio
-    _remaining(deadline)
     return result.stdout
 
 
@@ -165,7 +165,10 @@ class ASRHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Connection", "close")
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except OSError:
+            pass
         self.close_connection = True
 
     def _not_found(self):
@@ -187,7 +190,7 @@ class ASRHandler(BaseHTTPRequestHandler):
             return
         self._send_json(200, {"ok": True})
 
-    def _audio_body(self):
+    def _audio_body(self, deadline):
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError as exc:
@@ -198,20 +201,24 @@ class ASRHandler(BaseHTTPRequestHandler):
         if length > MAX_UPLOAD:
             self._send_json(413, {"error": "too_large"})
             return None
-        body = self.rfile.read(length)
+        try:
+            self.connection.settimeout(_remaining(deadline))
+            body = self.rfile.read(length)
+        except (OSError, TimeoutError) as exc:
+            raise TranscriptionTimeout from exc
         if len(body) != length:
             self._send_json(400, {"error": "empty_audio"})
             return None
         return body
 
     def _transcription(self):
+        deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
         content_type = self.headers.get("Content-Type", "")
         if not content_type.lower().startswith("audio/"):
             self._send_json(415, {"error": "unsupported_audio"})
             return
         try:
-            deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
-            body = self._audio_body()
+            body = self._audio_body(deadline)
             if body is None:
                 return
             wav_data = _convert_audio(body, content_type, deadline)
@@ -220,13 +227,13 @@ class ASRHandler(BaseHTTPRequestHandler):
             self._send_json(415, {"error": "unsupported_audio"})
             return
         except BridgeUnavailable:
-            self._send_json(502, {"error": "wyoming_failed"})
+            self._send_json(503, {"error": "wyoming_unavailable"})
             return
         except TranscriptionTimeout:
             self._send_json(504, {"error": "transcription_timeout"})
             return
         except AsrFailure:
-            self._send_json(503, {"error": "wyoming_unavailable"})
+            self._send_json(502, {"error": "wyoming_failed"})
             return
         except Exception:
             self._send_json(502, {"error": "wyoming_failed"})
@@ -237,19 +244,22 @@ class ASRHandler(BaseHTTPRequestHandler):
         self._send_json(200, {"text": text})
 
     def do_POST(self):
-        if self.path not in ("/health", "/v1/audio/transcriptions"):
+        if self.path != "/v1/audio/transcriptions":
             self._not_found()
             return
         if not self._authorized():
             self._send_json(401, {"error": "unauthorized"})
             return
-        if self.path == "/health":
-            self._health()
-            return
         self._transcription()
 
     def do_GET(self):
-        self._not_found()
+        if self.path != "/health":
+            self._not_found()
+            return
+        if not self._authorized():
+            self._send_json(401, {"error": "unauthorized"})
+            return
+        self._health()
 
     def do_HEAD(self):
         self._not_found()

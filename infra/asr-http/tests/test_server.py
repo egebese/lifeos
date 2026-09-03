@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import os
+import socket
 import threading
 import unittest
 import wave
@@ -153,18 +154,21 @@ class ServerTests(unittest.TestCase):
         return response.status, json.loads(response_body)
 
     def test_token_auth_protects_health_and_transcription(self):
-        for path in ("/health", "/v1/audio/transcriptions"):
+        for method, path in (
+            ("GET", "/health"),
+            ("POST", "/v1/audio/transcriptions"),
+        ):
             for token in (None, "wrong"):
-                with self.subTest(path=path, token=token):
-                    status, body = self.request("POST", path, token=token)
+                with self.subTest(method=method, path=path, token=token):
+                    status, body = self.request(method, path, token=token)
                     self.assertEqual(status, 401)
                     self.assertEqual(body, {"error": "unauthorized"})
 
-    def test_post_health_returns_ok_and_unavailable_is_503(self):
+    def test_get_health_returns_ok_and_unavailable_is_503(self):
         create_connection = Mock(return_value=DummySocket())
         fake_socket_module = SimpleNamespace(create_connection=create_connection)
         with patch.object(self.module, "socket", fake_socket_module):
-            status, body = self.request("POST", "/health")
+            status, body = self.request("GET", "/health")
         self.assertEqual(status, 200)
         self.assertEqual(body, {"ok": True})
         self.assertEqual(create_connection.call_args.args[0], ("127.0.0.1", 10300))
@@ -176,7 +180,7 @@ class ServerTests(unittest.TestCase):
             "socket",
             SimpleNamespace(create_connection=create_connection),
         ):
-            status, body = self.request("POST", "/health")
+            status, body = self.request("GET", "/health")
         self.assertEqual(status, 503)
         self.assertEqual(body, {"error": "wyoming_unavailable"})
 
@@ -203,6 +207,9 @@ class ServerTests(unittest.TestCase):
         self.assertIn("16000", command)
         self.assertIn("-ac", command)
         self.assertIn("1", command)
+        self.assertIn("-c:a", command)
+        self.assertIn("pcm_s16le", command)
+        self.assertEqual(command[-3:], ["-f", "wav", "pipe:1"])
 
         from wyoming.audio import AudioChunk
         from wyoming.asr import Transcribe
@@ -223,7 +230,8 @@ class ServerTests(unittest.TestCase):
 
     def test_non_post_and_unknown_paths_return_404(self):
         for method, path in (
-            ("GET", "/health"),
+            ("POST", "/health"),
+            ("GET", "/v1/audio/transcriptions"),
             ("PUT", "/v1/audio/transcriptions"),
             ("TRACE", "/health"),
             ("CONNECT", "/health"),
@@ -258,7 +266,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 415)
         self.assertEqual(body, {"error": "unsupported_audio"})
 
-    def test_bridge_unavailable_returns_502(self):
+    def test_bridge_unavailable_returns_503(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
         with patch.object(self.module.subprocess, "run", return_value=ffmpeg), patch.object(
             self.module.AsyncClient, "from_uri", return_value=UnavailableWyoming()
@@ -269,8 +277,8 @@ class ServerTests(unittest.TestCase):
                 body=b"encoded audio",
                 content_type="audio/wav",
             )
-        self.assertEqual(status, 502)
-        self.assertEqual(body, {"error": "wyoming_failed"})
+        self.assertEqual(status, 503)
+        self.assertEqual(body, {"error": "wyoming_unavailable"})
 
     def test_timeout_returns_504(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
@@ -311,7 +319,45 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 504)
         self.assertEqual(body, {"error": "transcription_timeout"})
 
-    def test_wyoming_asr_failure_returns_503(self):
+    def stalled_request(self, content_length):
+        connection = socket.create_connection(
+            ("127.0.0.1", self.httpd.server_port), timeout=2
+        )
+        connection.sendall(
+            (
+                "POST /v1/audio/transcriptions HTTP/1.1\r\n"
+                "Host: 127.0.0.1\r\n"
+                "X-ASR-Token: test-token\r\n"
+                "Content-Type: audio/wav\r\n"
+                f"Content-Length: {content_length}\r\n"
+                "Connection: close\r\n\r\n"
+            ).encode()
+        )
+        try:
+            response = connection.makefile("rb")
+            status = int(response.readline().split()[1])
+            headers = {}
+            for line in response:
+                if line in (b"\r\n", b"\n"):
+                    break
+                name, value = line.decode().split(":", 1)
+                headers[name.lower()] = value.strip()
+            body = json.loads(response.read(int(headers["content-length"])))
+            response.close()
+            return status, body
+        finally:
+            connection.close()
+
+    def test_stalled_audio_body_hits_shared_deadline(self):
+        with patch.object(self.module, "TRANSCRIPTION_TIMEOUT", 0.01), patch.object(
+            self.module.subprocess, "run"
+        ) as run:
+            status, body = self.stalled_request(10)
+        self.assertEqual(status, 504)
+        self.assertEqual(body, {"error": "transcription_timeout"})
+        run.assert_not_called()
+
+    def test_wyoming_asr_failure_returns_502(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
         with patch.object(self.module.subprocess, "run", return_value=ffmpeg), patch.object(
             self.module.AsyncClient, "from_uri", return_value=FailingWyoming()
@@ -322,8 +368,8 @@ class ServerTests(unittest.TestCase):
                 body=b"encoded audio",
                 content_type="audio/wav",
             )
-        self.assertEqual(status, 503)
-        self.assertEqual(body, {"error": "wyoming_unavailable"})
+        self.assertEqual(status, 502)
+        self.assertEqual(body, {"error": "wyoming_failed"})
 
     def test_empty_transcript_returns_422(self):
         ffmpeg = SimpleNamespace(returncode=0, stdout=wav_bytes(b"\x00\x00"), stderr=b"")
