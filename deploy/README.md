@@ -111,6 +111,12 @@ Verify after installation:
     curl -fsS -H "X-ASR-Token: $ASR_HTTP_TOKEN" \
       http://127.0.0.1:10202/health
 
+Voice capture in a browser requires a secure origin. Use HTTPS for a LAN
+address, or use http://localhost:3000 when the browser is running on the
+LifeOS host. Plain http://192.168.x.x:3000 pages cannot request microphone
+access; LifeOS displays this requirement instead of sending a broken audio
+request.
+
 ## 4. Host local TTS
 
 TTS is not called by the current LifeOS UI. You can still run a local TTS

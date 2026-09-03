@@ -179,6 +179,9 @@ recoverable backup, and reruns:
 The config and named volumes are preserved. Do not run `docker compose down
 -v`; that deletes the database and uploads volumes.
 
+Browser voice capture requires HTTPS for a LAN address; `http://localhost:3000`
+also works when the browser runs on the LifeOS host.
+
 ## Tech
 
 - **Runtime** — Next.js 15 App Router · React 19 · TypeScript strict · Tailwind v4
