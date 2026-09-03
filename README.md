@@ -140,8 +140,8 @@ pnpm dev                         # http://localhost:3000
 │  └─ app/api/*      REST handlers                             │
 │                                                              │
 │  lib/ai/client.ts  ──────────────►  llama.cpp                │
-│    chat()                            Qwen3.8-27B              │
-│    vision()                          Qwen vision              │
+│    chat()                            configured local model  │
+│    vision()                          configured vision model │
 │    transcribeAudio()  ───────────►  ASR HTTP bridge           │
 │                                                              │
 │  lib/auth         iron-session + argon2id                    │

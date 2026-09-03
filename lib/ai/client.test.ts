@@ -20,7 +20,7 @@ import {
   vision,
 } from "./client.js";
 
-const MODEL = "/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf";
+const MODEL = "test-local-vision-model";
 const PORTABLE_MODEL = "my-local-vision-model";
 const originalFetch = globalThis.fetch;
 const originalDatabaseUrl = process.env.DATABASE_URL;

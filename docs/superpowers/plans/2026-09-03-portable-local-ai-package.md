@@ -35,6 +35,7 @@
 - [ ] Implement source copying with exclusions and no deletion of target files, preserving a pre-existing private config and runtime data.
 - [ ] Add a stable configurable Compose volume prefix and render the user systemd unit with configured paths plus an explicit `EnvironmentFile=`.
 - [ ] Preflight config/dependencies and Compose before restart; leave persistent state untouched on preflight/build failure.
+- [ ] Use configured `FFMPEG_BIN` in the bridge and retry post-start health checks until the app is ready.
 - [ ] Enforce mode 600 on the private config, reject a config located inside the source tree, and test that the private file is never copied.
 - [ ] Enable linger when possible, reload the user manager, and enable/start only the LifeOS bridge.
 - [ ] Run Compose with `--env-file` and `up -d --build`; do not remove volumes.
