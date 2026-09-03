@@ -14,6 +14,7 @@ import {
   LocalAiMissingModelError,
   LocalAiTimeoutError,
   localAiRouteFailure,
+  redactedLocalAiPrompt,
   redactForLog,
   uploadLocal,
   vision,
@@ -184,6 +185,23 @@ test("redacts image data URLs and audio bytes before AI logging", () => {
     nested: [{ image: "image/jpeg", bytes: 3 }, { bytes: audio.length }],
   });
   assert.doesNotMatch(JSON.stringify(redacted), /private audio bytes|\/9j\//);
+});
+
+test("includes the local LLM endpoint in redacted prompt metadata", () => {
+  const image = "data:image/jpeg;base64,/9j/";
+  const metadata = redactedLocalAiPrompt("http://127.0.0.1:8081/v1", {
+    model: MODEL,
+    messages: [{ role: "user", content: image }],
+  });
+
+  assert.deepEqual(metadata, {
+    endpoint: "http://127.0.0.1:8081/v1",
+    request: {
+      model: MODEL,
+      messages: [{ role: "user", content: { image: "image/jpeg", bytes: 3 } }],
+    },
+  });
+  assert.doesNotMatch(JSON.stringify(metadata), /data:image\/jpeg|\/9j\//);
 });
 
 test("maps local AI failures to safe route status and detail", () => {

@@ -136,6 +136,10 @@ export function redactForLog(value: unknown): unknown {
   return value;
 }
 
+export function redactedLocalAiPrompt(endpoint: string, request: unknown): object {
+  return redactForLog({ endpoint, request }) as object;
+}
+
 async function recordAiMessage(args: {
   userId: string;
   kind: AiKind;
@@ -260,7 +264,7 @@ async function completion(args: ChatArgs, messages: OpenAiMessage[], defaultTemp
     await recordAiMessage({
       userId: args.userId,
       kind: args.kind,
-      prompt: { request },
+      prompt: redactedLocalAiPrompt(configured.baseUrl, request),
       response: responseForLog,
       model: configured.model,
       errorMsg,
@@ -410,11 +414,14 @@ export type TranscribeArgs = {
 
 export async function transcribeAudio(args: TranscribeArgs): Promise<{ text: string; raw: unknown }> {
   const baseUrl = (process.env.ASR_HTTP_URL || DEFAULT_ASR_URL).replace(/\/+$/, "");
+  const asrToken = process.env.ASR_HTTP_TOKEN;
   const audio = Buffer.from(args.audio);
   let response: Response | null = null;
   let responseForLog: unknown = null;
   let errorMsg: string | null = null;
   try {
+    if (typeof asrToken !== "string" || !asrToken.trim()) throw new AsrError("asr_unavailable");
+
     let url: string;
     try {
       url = new URL("v1/audio/transcriptions", `${baseUrl}/`).toString();
@@ -426,7 +433,7 @@ export async function transcribeAudio(args: TranscribeArgs): Promise<{ text: str
         method: "POST",
         headers: {
           "content-type": args.contentType,
-          "x-asr-token": process.env.ASR_HTTP_TOKEN || "",
+          "x-asr-token": asrToken,
         },
         body: audio,
         signal: AbortSignal.timeout(45000),

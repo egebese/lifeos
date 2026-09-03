@@ -94,6 +94,26 @@ test("processAudioRequest rejects an empty 200 transcript", async () => {
   assert.deepEqual(await response.json(), { error: "transcribe_failed", detail: "asr_invalid_response" });
 });
 
+test("processAudioRequest rejects a missing ASR token before making a request", async () => {
+  const token = process.env.ASR_HTTP_TOKEN;
+  delete process.env.ASR_HTTP_TOKEN;
+  let fetchCalls = 0;
+  globalThis.fetch = async () => {
+    fetchCalls++;
+    throw new Error("must not fetch without an ASR token");
+  };
+
+  try {
+    const response = await processAudioRequest(requestFor(new Uint8Array([1])), "user-1");
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: "transcribe_failed", detail: "asr_unavailable" });
+    assert.equal(fetchCalls, 0);
+  } finally {
+    if (token === undefined) delete process.env.ASR_HTTP_TOKEN;
+    else process.env.ASR_HTTP_TOKEN = token;
+  }
+});
+
 test.after(() => {
   globalThis.fetch = originalFetch;
   if (originalAsrUrl === undefined) delete process.env.ASR_HTTP_URL;
