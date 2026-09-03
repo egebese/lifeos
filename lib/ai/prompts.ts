@@ -1,5 +1,5 @@
-// Prompt builders. Each returns { system, prompt } strings (the fal openrouter
-// endpoint takes them as separate fields).
+// Prompt builders. Each returns { system, prompt } strings for the local
+// OpenAI-compatible endpoint.
 
 export type Prompt = { system: string; prompt: string };
 

@@ -56,6 +56,11 @@ LifeOS uses these existing LAN services:
 
 The configured llama.cpp model id is `/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf`. Existing TTS at `192.168.2.61:10201` is separate; LifeOS does not start, reconfigure, or require it. No external AI API key is needed.
 
+Meal-text parsing performs at most one DuckDuckGo HTML search (up to five
+results and 6,000 characters). Results are marked as untrusted reference
+context, never executed, and a search failure still returns a parse with
+`search_used: false`.
+
 ## Features
 
 | | |
@@ -156,6 +161,14 @@ pnpm dev                         # http://localhost:3000
 6. For Whoop's daily safety-net sync, set `ENABLE_CRON=1`; keep `TZ=Europe/Istanbul` or set the deployment's IANA timezone. Configure the existing `WHOOP_*` variables only if Whoop is enabled.
 
 The bridge and the existing TTS service at `192.168.2.61:10201` are host services, not Compose services. LifeOS does not restart or reconfigure them. No external AI API key is needed.
+
+After provisioning the bridge, verify it without exposing the token:
+
+```bash
+command -v ffmpeg
+systemctl --user is-enabled lifeos-asr-http.service
+curl -fsS -H "X-ASR-Token: $ASR_HTTP_TOKEN" http://192.168.2.61:10202/health
+```
 
 ## Tech
 

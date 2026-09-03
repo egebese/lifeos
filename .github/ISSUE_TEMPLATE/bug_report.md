@@ -30,7 +30,7 @@ labels: bug
 
 <!--
 Paste relevant logs (`docker compose logs web` or browser console).
-REDACT FAL_KEY, session cookies, DB connection strings, and any personal data.
+REDACT ASR_HTTP_TOKEN, session cookies, DB connection strings, and any personal data.
 -->
 
 ```

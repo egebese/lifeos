@@ -438,7 +438,7 @@ export async function transcribeAudio(args: TranscribeArgs): Promise<{ text: str
         body: audio,
         signal: AbortSignal.timeout(45000),
       });
-    } catch (error) {
+    } catch {
       throw new AsrError("asr_unavailable");
     }
     if ([503, 504].includes(response.status)) throw new AsrError("asr_unavailable");
