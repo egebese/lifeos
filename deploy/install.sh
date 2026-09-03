@@ -12,8 +12,8 @@ case "$config_file" in
   "$source_dir"|"$source_dir"/*) echo "config file must be outside the source tree" >&2; exit 1 ;;
 esac
 config_mode=$(stat -c '%a' "$config_file")
-(( (8#$config_mode & 077) == 0 )) || {
-  echo 'config file permissions must not allow group/other read, write, or execute' >&2
+[[ $config_mode == 600 ]] || {
+  echo 'config file permissions must be exactly 600' >&2
   exit 1
 }
 

@@ -36,12 +36,12 @@ chmod 600 "$config"
 
 insecure="$tmp_dir/insecure.env"
 cp "$config" "$insecure"
-chmod 640 "$insecure"
+chmod 400 "$insecure"
 if TEST_MODE=1 bash "$installer" --dry-run "$insecure" >"$tmp_dir/insecure.out" 2>&1; then
-  fail "group-readable config unexpectedly succeeded"
+  fail "non-600 config unexpectedly succeeded"
 fi
 grep -Fq 'permissions' "$tmp_dir/insecure.out" || fail "insecure config error was unclear"
-[[ $(stat -c '%a' "$insecure") == 640 ]] || fail "dry-run changed config permissions"
+[[ $(stat -c '%a' "$insecure") == 400 ]] || fail "dry-run changed config permissions"
 pass "dry-run rejects readable config without chmod"
 
 output=$(TEST_MODE=1 bash "$installer" --dry-run "$config" 2>&1) || fail "complete dry-run failed: $output"
