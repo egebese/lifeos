@@ -84,6 +84,14 @@ function chatResponse(content: string) {
   return { choices: [{ message: { role: "assistant", content } }] };
 }
 
+function responseWithJsonError(error: Error): Response {
+  const response = new Response("body", { status: 200 });
+  response.json = async () => {
+    throw error;
+  };
+  return response;
+}
+
 test("chat validates the exact multimodal model once and sends OpenAI messages", async () => {
   await withServer(
     async (req, res) => {
@@ -288,6 +296,52 @@ test("completion errors and malformed content use typed local-AI errors", async 
       sendJson(res, {}, 404);
     },
     async () => {
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof LocalAiInvalidResponseError && error.code === "local_ai_invalid_response",
+      );
+    },
+  );
+});
+
+test("maps a chat completion body timeout to a typed unavailable error", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      const fetchForModels = globalThis.fetch;
+      globalThis.fetch = async (input, init) => {
+        if (String(input).endsWith("/v1/chat/completions")) {
+          return responseWithJsonError(new DOMException("response read timed out", "TimeoutError"));
+        }
+        return fetchForModels(input, init);
+      };
+
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof LocalAiTimeoutError && error.code === "local_ai_unavailable",
+      );
+    },
+  );
+});
+
+test("keeps an ordinary chat completion body error as invalid response", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      const fetchForModels = globalThis.fetch;
+      globalThis.fetch = async (input, init) => {
+        if (String(input).endsWith("/v1/chat/completions")) {
+          return responseWithJsonError(new SyntaxError("invalid JSON"));
+        }
+        return fetchForModels(input, init);
+      };
+
       await assert.rejects(
         () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
         (error: unknown) => error instanceof LocalAiInvalidResponseError && error.code === "local_ai_invalid_response",

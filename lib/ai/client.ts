@@ -248,7 +248,8 @@ async function completion(args: ChatArgs, messages: OpenAiMessage[], defaultTemp
     let payload: unknown;
     try {
       payload = await response.json();
-    } catch {
+    } catch (error) {
+      if (timedOut(error)) throw new LocalAiTimeoutError();
       throw new LocalAiInvalidResponseError();
     }
     if (isRecord(payload) && payload.error) throw new LocalAiUpstreamError();
