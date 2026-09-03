@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       schema: MealLogSchema,
       temperature: 0.2,
       maxTokens: 2500,
-      webSearch: true,
+      webSearchQuery: parsed.data.text,
     });
     return NextResponse.json({ parsed: out });
   } catch (e) {

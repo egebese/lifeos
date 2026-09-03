@@ -23,14 +23,14 @@ export async function POST(req: Request) {
   const full = uploadPath(safeName);
 
   try {
-    const cdnUrl = await uploadLocal(full);
+    const dataUrl = await uploadLocal(full);
     const { system, prompt } = foodVisionPrompt("en");
     const out = await visionJson({
       userId: user.id,
       kind: "food_vision",
       system,
       prompt,
-      imageUrls: [cdnUrl],
+      imageUrls: [dataUrl],
       schema: FoodVisionSchema,
       temperature: 0.2,
     });

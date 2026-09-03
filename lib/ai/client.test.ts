@@ -1,0 +1,279 @@
+import { after, afterEach, test } from "node:test";
+import assert from "node:assert/strict";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { z } from "zod";
+import {
+  chat,
+  chatJson,
+  LocalAiInvalidResponseError,
+  LocalAiMissingCapabilityError,
+  LocalAiMissingModelError,
+  LocalAiTimeoutError,
+  uploadLocal,
+  vision,
+} from "./client.js";
+
+const MODEL = "/home/dogda/Documents/LLM_Runners/Qwen3.8-27B-Q3_K_M.gguf";
+const originalFetch = globalThis.fetch;
+const originalDatabaseUrl = process.env.DATABASE_URL;
+
+delete process.env.DATABASE_URL;
+
+after(() => {
+  globalThis.fetch = originalFetch;
+  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = originalDatabaseUrl;
+});
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+});
+
+type RequestRecord = { method: string; url: string; body: string };
+
+async function readRequest(req: IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function sendJson(res: ServerResponse, body: unknown, status = 200) {
+  const json = JSON.stringify(body);
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(json);
+}
+
+async function withServer(
+  handler: (req: IncomingMessage, res: ServerResponse, requests: RequestRecord[]) => void | Promise<void>,
+  run: (baseUrl: string, requests: RequestRecord[]) => Promise<void>,
+) {
+  const requests: RequestRecord[] = [];
+  const server = createServer(async (req, res) => {
+    const body = await readRequest(req);
+    requests.push({ method: req.method ?? "", url: req.url ?? "", body });
+    await handler(req, res, requests);
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("test server did not start");
+  const baseUrl = `http://127.0.0.1:${address.port}/v1`;
+  process.env.LLAMA_CPP_BASE_URL = baseUrl;
+  process.env.LLAMA_CPP_MODEL = MODEL;
+  try {
+    await run(baseUrl, requests);
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  }
+}
+
+function validModels() {
+  return {
+    data: [{ id: MODEL }],
+    models: [{ id: MODEL, model: MODEL, name: MODEL, capabilities: ["chat", "multimodal"] }],
+  };
+}
+
+function chatResponse(content: string) {
+  return { choices: [{ message: { role: "assistant", content } }] };
+}
+
+test("chat validates the exact multimodal model once and sends OpenAI messages", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      if (req.url === "/v1/chat/completions") return sendJson(res, chatResponse("hello"));
+      sendJson(res, { error: "not found" }, 404);
+    },
+    async (_base, requests) => {
+      assert.deepEqual(await chat({
+        userId: "user-1",
+        kind: "freeform",
+        system: "Be concise",
+        prompt: "Say hello",
+        temperature: 0.2,
+        maxTokens: 17,
+      }), { text: "hello", raw: chatResponse("hello") });
+      await chat({ userId: "user-1", kind: "freeform", prompt: "Again" });
+
+      assert.equal(requests.filter((x) => x.url === "/v1/models").length, 1);
+      const body = JSON.parse(requests.find((x) => x.url === "/v1/chat/completions")!.body);
+      assert.deepEqual(body.messages, [
+        { role: "system", content: "Be concise" },
+        { role: "user", content: "Say hello" },
+      ]);
+      assert.equal(body.model, MODEL);
+      assert.equal(body.stream, false);
+      assert.equal(body.temperature, 0.2);
+      assert.equal(body.max_tokens, 17);
+    },
+  );
+});
+
+test("model validation has named errors for missing model and capability", async () => {
+  await withServer(
+    async (_req, res) => sendJson(res, { data: [{ id: "other" }], models: [] }),
+    async () => {
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof LocalAiMissingModelError && error.code === "local_ai_unavailable",
+      );
+    },
+  );
+
+  await withServer(
+    async (_req, res) => sendJson(res, { data: [{ id: MODEL }], models: [{ id: MODEL, model: MODEL, name: MODEL, capabilities: ["chat"] }] }),
+    async () => {
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof LocalAiMissingCapabilityError && error.code === "local_ai_invalid_response",
+      );
+    },
+  );
+});
+
+test("model-list timeout is a typed unavailable error", async () => {
+  process.env.LLAMA_CPP_BASE_URL = "http://127.0.0.1:65530/v1";
+  process.env.LLAMA_CPP_MODEL = `${MODEL}-timeout`;
+  globalThis.fetch = async () => {
+    throw new DOMException("timed out", "TimeoutError");
+  };
+
+  await assert.rejects(
+    () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+    (error: unknown) => error instanceof LocalAiTimeoutError && error.code === "local_ai_unavailable",
+  );
+});
+
+test("vision sends capped local image data URLs and rejects unsafe input", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "lifeos-ai-"));
+  const imagePath = path.join(dir, "meal.JPG");
+  await writeFile(imagePath, Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0]));
+
+  try {
+    const dataUrl = await uploadLocal(imagePath);
+    assert.match(dataUrl, /^data:image\/jpeg;base64,/);
+
+    await withServer(
+      async (req, res) => {
+        if (req.url === "/v1/models") return sendJson(res, validModels());
+        if (req.url === "/v1/chat/completions") return sendJson(res, chatResponse("seen"));
+        sendJson(res, { error: "not found" }, 404);
+      },
+      async (_base, requests) => {
+        await vision({ userId: "u", kind: "food_vision", prompt: "Describe it", imageUrls: [dataUrl] });
+        const body = JSON.parse(requests.find((x) => x.url === "/v1/chat/completions")!.body);
+        assert.deepEqual(body.messages[0].content, [
+          { type: "text", text: "Describe it" },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ]);
+      },
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+
+  await assert.rejects(
+    () => vision({ userId: "u", kind: "food_vision", prompt: "x", imageUrls: ["https://example.com/meal.jpg"] }),
+    (error: unknown) => error instanceof LocalAiInvalidResponseError && error.code === "local_ai_invalid_response",
+  );
+});
+
+test("completion errors and malformed content use typed local-AI errors", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      if (req.url === "/v1/chat/completions") return sendJson(res, { error: { message: "model failed" } }, 500);
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof Error && (error as { code?: string }).code === "local_ai_upstream_error",
+      );
+    },
+  );
+
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      if (req.url === "/v1/chat/completions") return sendJson(res, { choices: [] });
+      sendJson(res, {}, 404);
+    },
+    async () => {
+      await assert.rejects(
+        () => chat({ userId: "u", kind: "freeform", prompt: "x" }),
+        (error: unknown) => error instanceof LocalAiInvalidResponseError && error.code === "local_ai_invalid_response",
+      );
+    },
+  );
+});
+
+test("chatJson searches once, reuses context for retry, and owns search_used", async () => {
+  const searchHtml = `<div class="result results_links"><h2><a class="result__a" href="https://example.com/food">Food source</a></h2><a class="result__snippet">A reference.</a></div>`;
+  let searchCalls = 0;
+  await withServer(
+    async (req, res, requests) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      if (req.url === "/v1/chat/completions") {
+        const call = requests.filter((x) => x.url === "/v1/chat/completions").length;
+        return sendJson(res, chatResponse(call === 1 ? "not json" : JSON.stringify({ value: "ok", search_used: false })));
+      }
+      sendJson(res, {}, 404);
+    },
+    async (_base, requests) => {
+      const fetchForLlm = globalThis.fetch;
+      globalThis.fetch = async (input, init) => {
+        if (String(input).startsWith("https://html.duckduckgo.com/")) {
+          searchCalls++;
+          return new Response(searchHtml, { status: 200 });
+        }
+        return fetchForLlm(input, init);
+      };
+
+      const out = await chatJson({
+        userId: "u",
+        kind: "food_vision",
+        prompt: "Parse meal",
+        webSearchQuery: "eggs",
+        schema: z.object({ value: z.string(), search_used: z.boolean().optional() }),
+      });
+      assert.deepEqual(out, { value: "ok", search_used: true });
+      assert.equal(searchCalls, 1);
+      const prompts = requests
+        .filter((x) => x.url === "/v1/chat/completions")
+        .map((x) => JSON.parse(x.body).messages.at(-1).content as string);
+      assert.equal(prompts.length, 2);
+      assert.ok(prompts.every((prompt) => prompt.startsWith("[UNTRUSTED WEB SEARCH REFERENCES]")));
+      assert.equal(prompts[1].slice(0, prompts[0].length), prompts[0]);
+    },
+  );
+});
+
+test("chatJson continues without search context and stamps false on search failure", async () => {
+  await withServer(
+    async (req, res) => {
+      if (req.url === "/v1/models") return sendJson(res, validModels());
+      if (req.url === "/v1/chat/completions") return sendJson(res, chatResponse(JSON.stringify({ value: "ok" })));
+      sendJson(res, {}, 404);
+    },
+    async (_base, requests) => {
+      const fetchForLlm = globalThis.fetch;
+      globalThis.fetch = async (input, init) => {
+        if (String(input).startsWith("https://html.duckduckgo.com/")) throw new Error("search failed");
+        return fetchForLlm(input, init);
+      };
+      const out = await chatJson({
+        userId: "u",
+        kind: "food_vision",
+        prompt: "Parse meal",
+        webSearchQuery: "eggs",
+        schema: z.object({ value: z.string(), search_used: z.boolean().optional() }),
+      });
+      assert.deepEqual(out, { value: "ok", search_used: false });
+      assert.equal(JSON.parse(requests.find((x) => x.url === "/v1/chat/completions")!.body).messages.at(-1).content, "Parse meal");
+    },
+  );
+});
