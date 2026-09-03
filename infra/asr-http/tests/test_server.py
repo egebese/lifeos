@@ -211,6 +211,33 @@ class ServerTests(unittest.TestCase):
             self.module.ASRHandler.setup(handler)
         connection.settimeout.assert_called_once_with(self.module.HTTP_HEADER_TIMEOUT)
 
+    def test_transcription_uses_setup_deadline_after_header_parsing(self):
+        clock = FakeClock()
+        connection = Mock()
+        handler = object.__new__(self.module.ASRHandler)
+        handler.connection = connection
+        handler.headers = {"Content-Type": "audio/wav"}
+        handler._send_json = Mock()
+        with patch.object(self.module, "TRANSCRIPTION_TIMEOUT", 1.0), patch.object(
+            self.module, "time", SimpleNamespace(monotonic=clock.monotonic)
+        ), patch.object(self.module.BaseHTTPRequestHandler, "setup"), patch.object(
+            self.module, "_convert_audio", return_value=b"wav"
+        ) as convert_audio, patch.object(
+            self.module, "_transcribe_with_timeout", return_value="text"
+        ) as transcribe:
+            self.module.ASRHandler.setup(handler)
+            setup_deadline = handler._deadline
+            clock.value += 1.1
+            handler._audio_body = Mock(return_value=b"encoded")
+            self.module.ASRHandler._transcription(handler)
+
+        self.assertEqual(setup_deadline, 11.0)
+        handler._send_json.assert_called_once_with(
+            504, {"error": "transcription_timeout"}
+        )
+        convert_audio.assert_not_called()
+        transcribe.assert_not_called()
+
     def test_post_transcription_verifies_exact_raw_pcm_event_flow(self):
         pcm = bytes(range(256)) * 16
         fake = WyomingFake()

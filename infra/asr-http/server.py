@@ -169,8 +169,9 @@ def _transcribe_with_timeout(wav_data, deadline):
 
 class ASRHandler(BaseHTTPRequestHandler):
     def setup(self):
+        self._deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
         super().setup()
-        self.connection.settimeout(HTTP_HEADER_TIMEOUT)
+        self.connection.settimeout(min(HTTP_HEADER_TIMEOUT, _remaining(self._deadline)))
 
     def log_message(self, format, *args):
         return
@@ -236,7 +237,12 @@ class ASRHandler(BaseHTTPRequestHandler):
         return bytes(body)
 
     def _transcription(self):
-        deadline = time.monotonic() + TRANSCRIPTION_TIMEOUT
+        deadline = self._deadline
+        try:
+            _remaining(deadline)
+        except TranscriptionTimeout:
+            self._send_json(504, {"error": "transcription_timeout"})
+            return
         content_type = self.headers.get("Content-Type", "")
         if not content_type.lower().startswith("audio/"):
             self._send_json(415, {"error": "unsupported_audio"})
