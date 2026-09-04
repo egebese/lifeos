@@ -1,25 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/session";
-import { transcribeAudio, uploadBuffer } from "@/lib/ai/client";
+import { AsrError, transcribeAudio } from "@/lib/ai/client";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB hard limit
-const ALLOWED = new Set([
-  "audio/webm",
-  "audio/ogg",
-  "audio/mp4",
-  "audio/m4a",
-  "audio/x-m4a",
-  "audio/mpeg",
-  "audio/mp3",
-  "audio/wav",
-  "audio/wave",
-]);
-
-export async function POST(req: Request) {
-  const { user } = await requireSession();
+export async function processAudioRequest(req: Request, userId: string) {
   const form = await req.formData().catch(() => null);
   const file = form?.get("audio");
   if (!(file instanceof File)) {
@@ -33,41 +20,30 @@ export async function POST(req: Request) {
   }
 
   const type = file.type || "audio/webm";
-  if (![...ALLOWED].some((t) => type.startsWith(t.split("/")[0]) && (ALLOWED.has(type) || ALLOWED.has(t)))) {
-    // Be forgiving: the browser sometimes labels the same blob differently.
-    // We only reject obviously non-audio mime types.
-    if (!type.startsWith("audio/")) {
-      return NextResponse.json({ error: "unsupported_format", detail: type }, { status: 415 });
-    }
+  if (!type.startsWith("audio/")) {
+    return NextResponse.json({ error: "unsupported_format", detail: type }, { status: 415 });
   }
-
-  // Let wizper auto-detect the spoken language — users may dictate in Turkish
-  // or English even though the UI is English.
-  void user;
 
   try {
     const buf = Buffer.from(await file.arrayBuffer());
-    const ext = type.includes("webm")
-      ? "webm"
-      : type.includes("ogg")
-        ? "ogg"
-        : type.includes("wav")
-          ? "wav"
-          : type.includes("mp4") || type.includes("m4a")
-            ? "m4a"
-            : "mp3";
-    const uploadedUrl = await uploadBuffer(buf, `voice-${Date.now()}.${ext}`, type);
     const { text } = await transcribeAudio({
-      userId: user.id,
-      audioUrl: uploadedUrl,
-      language: null,
+      userId,
+      audio: buf,
+      contentType: type,
     });
     return NextResponse.json({ text: text.trim() });
   } catch (e) {
-    console.error("[food/transcribe]", e);
+    const detail = e instanceof AsrError ? e.code : "asr_unavailable";
+    const status = detail === "asr_unavailable" ? 503 : 502;
+    console.error("[food/transcribe]", detail);
     return NextResponse.json(
-      { error: "transcribe_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: "transcribe_failed", detail },
+      { status },
     );
   }
+}
+
+export async function POST(req: Request) {
+  const { user } = await requireSession();
+  return processAudioRequest(req, user.id);
 }

@@ -10,7 +10,7 @@ import {
   whoopRecovery,
   whoopSleep,
 } from "@/lib/db/schema";
-import { chatJson } from "@/lib/ai/client";
+import { chatJson, localAiRouteFailure } from "@/lib/ai/client";
 import { programGeneratorPrompt } from "@/lib/ai/prompts";
 import { AiProgramSchema } from "@/lib/ai/schemas";
 
@@ -157,9 +157,10 @@ export async function POST(req: NextRequest) {
       maxTokens: 3500,
     });
   } catch (e) {
+    const failure = localAiRouteFailure(e);
     return NextResponse.json(
-      { error: "ai_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 502 },
+      { error: "ai_failed", detail: failure.detail },
+      { status: failure.status },
     );
   }
 

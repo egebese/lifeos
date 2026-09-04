@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
-import { chatJson } from "@/lib/ai/client";
+import { chatJson, localAiRouteFailure } from "@/lib/ai/client";
 import { mealParserPrompt } from "@/lib/ai/prompts";
 import { MealLogSchema } from "@/lib/ai/schemas";
 
 export const runtime = "nodejs";
-// Web-search-augmented calls take longer than a typical chat — give them more
-// headroom than the default vercel function timeout.
+// Optional web-search calls take longer than a typical chat — give them more
+// headroom than the default function timeout.
 export const maxDuration = 60;
 
 const Body = z.object({
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
   });
 
   try {
+    const webSearchEnabled = process.env.ENABLE_WEB_SEARCH === "true";
     const out = await chatJson({
       userId: user.id,
       kind: "food_vision",
@@ -41,14 +42,17 @@ export async function POST(req: Request) {
       schema: MealLogSchema,
       temperature: 0.2,
       maxTokens: 2500,
-      webSearch: true,
+      webSearchQuery: webSearchEnabled ? parsed.data.text : undefined,
     });
-    return NextResponse.json({ parsed: out });
+    return NextResponse.json({
+      parsed: { ...out, search_used: webSearchEnabled ? out.search_used : false },
+    });
   } catch (e) {
-    console.error("[food/parse-meal]", e);
+    const failure = localAiRouteFailure(e);
+    console.error("[food/parse-meal]", failure.detail);
     return NextResponse.json(
-      { error: "parse_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: "parse_failed", detail: failure.detail },
+      { status: failure.status },
     );
   }
 }

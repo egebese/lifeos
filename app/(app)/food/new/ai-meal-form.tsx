@@ -69,6 +69,14 @@ export function AiMealForm({ initialDate }: { initialDate?: string } = {}) {
     setError(null);
     setStatus(null);
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError(
+          window.isSecureContext
+            ? "mic unavailable: this browser does not support microphone capture."
+            : "mic blocked: open LifeOS over HTTPS (or localhost) to use voice logging.",
+        );
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mime = pickMime();

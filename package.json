@@ -19,7 +19,6 @@
     "postinstall": "true"
   },
   "dependencies": {
-    "@fal-ai/client": "^1.6.0",
     "@node-rs/argon2": "^2.0.2",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",

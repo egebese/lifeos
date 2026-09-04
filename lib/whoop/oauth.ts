@@ -24,11 +24,17 @@ function env(name: string): string {
   return v;
 }
 
+function redirectUri(): string {
+  const configured = process.env.WHOOP_REDIRECT_URI?.trim();
+  if (configured) return configured;
+  return `${env("NEXT_PUBLIC_APP_URL").replace(/\/+$/, "")}/api/whoop/callback`;
+}
+
 export function buildAuthorizeUrl(state: string): string {
   const url = new URL(AUTHORIZE_URL);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", env("WHOOP_CLIENT_ID"));
-  url.searchParams.set("redirect_uri", env("WHOOP_REDIRECT_URI"));
+  url.searchParams.set("redirect_uri", redirectUri());
   url.searchParams.set("scope", WHOOP_SCOPES);
   url.searchParams.set("state", state);
   return url.toString();
@@ -46,7 +52,7 @@ export async function exchangeCode(code: string): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: env("WHOOP_REDIRECT_URI"),
+    redirect_uri: redirectUri(),
     client_id: env("WHOOP_CLIENT_ID"),
     client_secret: env("WHOOP_CLIENT_SECRET"),
   });

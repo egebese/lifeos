@@ -212,7 +212,7 @@ const en = {
   "anal.recommendations": "RECOMMENDATIONS",
   "anal.analyzing": "ANALYZING…",
   "anal.generate": "GENERATE →",
-  "anal.clickGenerate": "Click GENERATE to get a Sonnet-powered review of the last 7 days.",
+  "anal.clickGenerate": "Click GENERATE to get a local-Qwen review of the last 7 days.",
 
   // ---- Workouts
   "work.title": "workouts",
@@ -359,7 +359,7 @@ const en = {
   "plan.gen14Days": "14 days",
   "plan.generatingForm": "GENERATING…",
   "plan.generateForm": "GENERATE →",
-  "plan.usesProfile": "Uses profile goal + preferences + pantry. Sonnet 4.6 via fal openrouter.",
+  "plan.usesProfile": "Uses profile goal + preferences + pantry. Runs on the configured local Qwen model.",
 
   // ---- Workout detail / session
   "work.back": "← BACK",
@@ -390,7 +390,7 @@ const en = {
   "prog.focusNotesLabel": "FOCUS / NOTES (optional)",
   "prog.injuriesLimitsLabel": "INJURIES / LIMITS (optional)",
   "prog.generateProgramButton": "GENERATE PROGRAM →",
-  "prog.aiDemoMessage": "Demo: AI program generation runs Claude Sonnet via fal.ai in the self-hosted version. Use the manual form below, or check github.com/egebese/lifeos.",
+  "prog.aiDemoMessage": "Demo: AI program generation runs the configured local Qwen model in the self-hosted version. Use the manual form below, or check github.com/egebese/lifeos.",
   "prog.programNotFound": "program not found —",
   "prog.editBackLink": "← PROGRAMS",
   "prog.editButton": "EDIT",
@@ -616,7 +616,7 @@ const tr: Record<DictKey, string> = {
   "anal.recommendations": "ÖNERİLER",
   "anal.analyzing": "ANALİZ EDİLİYOR…",
   "anal.generate": "OLUŞTUR →",
-  "anal.clickGenerate": "Son 7 günün Sonnet tarafından desteklenen incelemesini almak için OLUŞTUR'a tıklayın.",
+  "anal.clickGenerate": "Son 7 günün yerel Qwen modeli tarafından desteklenen incelemesini almak için OLUŞTUR'a tıklayın.",
 
   // ---- Workouts
   "work.title": "antrenmanlar",
@@ -763,7 +763,7 @@ const tr: Record<DictKey, string> = {
   "plan.gen14Days": "14 gün",
   "plan.generatingForm": "OLUŞTURULUYOR…",
   "plan.generateForm": "OLUŞTUR →",
-  "plan.usesProfile": "Profil hedefi + tercihleri + kileri kullanır. Sonnet 4.6 fal openrouter aracılığıyla.",
+  "plan.usesProfile": "Profil hedefi + tercihleri + kileri kullanır. Yapılandırılmış yerel Qwen modelinde çalışır.",
 
   // ---- Workout detail / session
   "work.back": "← GERİ",
@@ -794,7 +794,7 @@ const tr: Record<DictKey, string> = {
   "prog.focusNotesLabel": "ODAK / NOTLAR (isteğe bağlı)",
   "prog.injuriesLimitsLabel": "YARALANMALAR / KISITLAR (isteğe bağlı)",
   "prog.generateProgramButton": "PROGRAM OLUŞTUR →",
-  "prog.aiDemoMessage": "Demo: AI program oluşturma, self-hosted sürümde fal.ai aracılığıyla Claude Sonnet çalıştırır. Aşağıdaki manuel formu kullanın veya github.com/egebese/lifeos adresini kontrol edin.",
+  "prog.aiDemoMessage": "Demo: AI program oluşturma, self-hosted sürümde yapılandırılmış yerel Qwen modelini çalıştırır. Aşağıdaki manuel formu kullanın veya github.com/egebese/lifeos adresini kontrol edin.",
   "prog.programNotFound": "program bulunamadı —",
   "prog.editBackLink": "← PROGRAMLAR",
   "prog.editButton": "DÜZENLE",

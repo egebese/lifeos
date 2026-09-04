@@ -11,7 +11,7 @@ import {
   profile,
   shoppingLists,
 } from "@/lib/db/schema";
-import { chatJson } from "@/lib/ai/client";
+import { chatJson, localAiRouteFailure } from "@/lib/ai/client";
 import { weeklyPlanPrompt } from "@/lib/ai/prompts";
 import { MealPlanSchema } from "@/lib/ai/schemas";
 import { bmr, macroSplit, recommendedKcal, tdee } from "@/lib/nutrition";
@@ -118,10 +118,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ id: plan.id, plan: out });
   } catch (e) {
-    console.error("[plan/generate]", e);
+    const failure = localAiRouteFailure(e);
+    console.error("[plan/generate]", failure.detail);
     return NextResponse.json(
-      { error: "generation_failed", detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: "generation_failed", detail: failure.detail },
+      { status: failure.status },
     );
   }
 }

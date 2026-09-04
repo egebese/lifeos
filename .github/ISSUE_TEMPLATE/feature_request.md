@@ -17,10 +17,10 @@ labels: enhancement
 
 ## Scope check
 
-LifeOS is intentionally single-admin and fal.ai-only. Please confirm:
+LifeOS is intentionally single-admin and local-AI-only. Please confirm:
 
 - [ ] This does not require multi-tenant auth
-- [ ] This does not require replacing fal.ai as the AI provider
+- [ ] This does not require replacing the configured local AI provider
 - [ ] This is reasonable for a self-hosted single-user app
 
 (See [CONTRIBUTING.md → Scope](../../CONTRIBUTING.md) if unsure.)

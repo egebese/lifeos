@@ -25,4 +25,4 @@ Thanks for sending a PR! Please read CONTRIBUTING.md if you haven't.
 - [ ] `pnpm build` passes
 - [ ] Updated `.env.example` if I added/changed an env var
 - [ ] Updated `README.md` / docs if user-facing behaviour changed
-- [ ] No `FAL_KEY` / secrets / personal data in commits or screenshots
+- [ ] No `ASR_HTTP_TOKEN` / secrets / personal data in commits or screenshots
