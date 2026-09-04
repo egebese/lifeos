@@ -98,6 +98,7 @@ Set these values in the LifeOS config:
     ASR_PYTHON=$HOME/wyoming-onnx-asr/.venv/bin/python
     FFMPEG_BIN=/usr/bin/ffmpeg
     ASR_HTTP_TOKEN=generate-a-long-random-value
+    ENABLE_WEB_SEARCH=false
 
 The installer writes the token-protected bridge as
 lifeos-asr-http.service in the user's systemd directory and restarts that
@@ -265,8 +266,12 @@ the checkout, keep LIFEOS_PROJECT_NAME and LIFEOS_VOLUME_PREFIX unchanged so
 Compose attaches the same stack and volumes.
 
 For HTTPS behind a reverse proxy, set NEXT_PUBLIC_APP_URL to the HTTPS origin
-and SESSION_COOKIE_SECURE=true. For plain HTTP on a trusted LAN, leave it
-false.
+and SESSION_COOKIE_SECURE=true. Production keeps cookies Secure even if the
+override is false; use false only for local development over plain HTTP.
+
+Web search is disabled by default. Set ENABLE_WEB_SEARCH=true only if sending
+raw meal text to DuckDuckGo is acceptable for your deployment. The search
+request is bounded and its results are treated as untrusted context.
 
 ## 7. Troubleshooting
 

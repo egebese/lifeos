@@ -30,7 +30,7 @@
 - Create: `deploy/update.sh`
 - Create: `deploy/systemd/lifeos-asr-http.service.in`
 
-- [ ] Add a trusted shell-style config template with blank required credentials, generic localhost examples, provider URLs, model id, bridge paths, and plain-HTTP/TLS notes.
+- [ ] Add a trusted shell-style config template with blank required credentials, generic localhost examples, provider URLs, model id, bridge paths, optional web-search opt-in, and plain-HTTP/TLS notes.
 - [ ] Implement strict Bash validation, a `--dry-run` mode, non-secret status output, and dependency checks.
 - [ ] Implement source copying with exclusions and no deletion of target files, preserving a pre-existing private config and runtime data.
 - [ ] Add a stable configurable Compose volume prefix and render the user systemd unit with configured paths plus an explicit `EnvironmentFile=`.
@@ -95,7 +95,7 @@
 - [ ] Document Wyoming NeMo/Parakeet STT hosting, bridge setup, English-only behavior, ffmpeg, token protection, and firewall scope.
 - [ ] Document local TTS hosting options and the current lack of a LifeOS speech-output route.
 - [ ] Explain that `deploy/config.env` is private, updates preserve it and Docker volumes, and `docker compose down -v` is destructive.
-- [ ] Remove remaining personal default values from public examples while preserving backwards compatibility for existing `.env` deployments.
+- [ ] Remove remaining personal default values from public examples while preserving backwards compatibility for existing `.env` deployments; keep production cookies Secure and web search opt-in.
 
 ---
 

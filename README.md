@@ -56,10 +56,11 @@ future spoken-output clients; the current LifeOS UI does not call TTS.
 No external AI API key is needed, and the installer does not download model
 weights or replace provider runtimes.
 
-Meal-text parsing performs at most one DuckDuckGo HTML search (up to five
-results and 6,000 characters). Results are marked as untrusted reference
-context, never executed, and a search failure still returns a parse with
-`search_used: false`.
+Meal-text parsing can optionally perform one DuckDuckGo HTML search (up to
+five results and 6,000 characters) when `ENABLE_WEB_SEARCH=true`. Because the
+raw meal text becomes the search query, this is disabled by default. Results
+are marked as untrusted reference context, never executed, and a search
+failure still returns a parse with `search_used: false`.
 
 ## Features
 
@@ -123,6 +124,7 @@ pnpm dev                         # http://localhost:3000
 | `LLAMA_CPP_MODEL` | ✅ (deployment) | Exact model id returned by llama.cpp `/v1/models`; must advertise `multimodal` |
 | `ASR_HTTP_URL` | ✅ (deployment) | Token-protected ASR bridge URL |
 | `ASR_HTTP_TOKEN` | ✅ | Shared secret for the ASR HTTP bridge; keep it out of Git and logs |
+| `ENABLE_WEB_SEARCH` | optional | Set `true` only if sending raw meal text to DuckDuckGo is acceptable; defaults to `false` |
 | `TTS_BASE_URL` | optional | User-hosted TTS URL; informational until LifeOS adds speech output |
 | `WHOOP_CLIENT_ID` | optional | From [developer.whoop.com](https://developer.whoop.com) |
 | `WHOOP_CLIENT_SECRET` | optional | OAuth client secret |

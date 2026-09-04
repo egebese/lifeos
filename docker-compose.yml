@@ -31,7 +31,8 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET to a random value}
       ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL for the first admin account}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD for the first admin account}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      ENABLE_WEB_SEARCH: ${ENABLE_WEB_SEARCH:-false}
       LLAMA_CPP_BASE_URL: ${LLAMA_CPP_BASE_URL:?Set LLAMA_CPP_BASE_URL in the private config}
       LLAMA_CPP_MODEL: ${LLAMA_CPP_MODEL:?Set LLAMA_CPP_MODEL in the private config}
       ASR_HTTP_URL: ${ASR_HTTP_URL:?Set ASR_HTTP_URL in the private config}

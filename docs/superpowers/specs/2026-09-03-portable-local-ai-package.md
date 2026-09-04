@@ -17,6 +17,7 @@ The config is a trusted shell-style environment file. It is mode 600 and is neve
 
 - LifeOS remains a Docker Compose application with named Postgres and uploads volumes. Compose uses a stable `LIFEOS_PROJECT_NAME` (default `lifeos`) and explicit `LIFEOS_VOLUME_PREFIX` names (default `lifeos`) so moving the checkout does not silently create a second stack or empty database/uploads volumes. Existing deployments keep both values unchanged.
 - The application receives `LLAMA_CPP_BASE_URL`, `LLAMA_CPP_MODEL`, `ASR_HTTP_URL`, `ASR_HTTP_TOKEN`, and `TTS_BASE_URL` from the config file.
+- Web search is controlled by `ENABLE_WEB_SEARCH` and defaults to disabled; enabling it explicitly sends raw meal text to DuckDuckGo for nutrition lookup.
 - The local AI client validates any configured exact model id by reading `/v1/models`; it requires the matching llama.cpp metadata to advertise `multimodal`. The original deployment's model path is no longer hard-coded as the only accepted value.
 - The generated user systemd unit loads the private config with `EnvironmentFile=`, so the Python ASR bridge receives `ASR_HTTP_HOST`, `ASR_HTTP_PORT`, `WYOMING_URI`, and `FFMPEG_BIN` from the same config file. Updates restart the bridge so changed settings take effect. It continues to forward English audio to an existing Wyoming-compatible STT server; it does not download or own a model.
 - TTS is a configured provider endpoint for future spoken-output clients. Current LifeOS routes do not call TTS, so the package documents hosting and configuration without claiming an unused integration.
@@ -37,7 +38,7 @@ Required application values:
 | `ASR_HTTP_URL` | LifeOS ASR bridge URL |
 | `ASR_HTTP_TOKEN` | Shared bridge secret |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SESSION_SECRET` | First-boot/auth values |
-| `SESSION_COOKIE_SECURE` | `false` for plain HTTP LAN, `true` behind HTTPS |
+| `SESSION_COOKIE_SECURE` | `true` behind HTTPS; `false` is only for local development over plain HTTP and is ignored in production |
 
 Required bridge values:
 
@@ -53,6 +54,7 @@ Optional provider value:
 | Variable | Meaning |
 | --- | --- |
 | `TTS_BASE_URL` | User's TTS endpoint; informational until LifeOS adds spoken output |
+| `ENABLE_WEB_SEARCH` | Optional explicit opt-in to send raw meal text to DuckDuckGo |
 
 No public default contains a personal IP address, username, home path, model path, or credential. Required values fail validation when empty. The main Compose file and runtime client use generic localhost/empty defaults only; deployment-specific values live in the private config.
 

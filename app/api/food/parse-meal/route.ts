@@ -6,8 +6,8 @@ import { mealParserPrompt } from "@/lib/ai/prompts";
 import { MealLogSchema } from "@/lib/ai/schemas";
 
 export const runtime = "nodejs";
-// Web-search-augmented calls take longer than a typical chat — give them more
-// headroom than the default vercel function timeout.
+// Optional web-search calls take longer than a typical chat — give them more
+// headroom than the default function timeout.
 export const maxDuration = 60;
 
 const Body = z.object({
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
   });
 
   try {
+    const webSearchEnabled = process.env.ENABLE_WEB_SEARCH === "true";
     const out = await chatJson({
       userId: user.id,
       kind: "food_vision",
@@ -41,9 +42,11 @@ export async function POST(req: Request) {
       schema: MealLogSchema,
       temperature: 0.2,
       maxTokens: 2500,
-      webSearchQuery: parsed.data.text,
+      webSearchQuery: webSearchEnabled ? parsed.data.text : undefined,
     });
-    return NextResponse.json({ parsed: out });
+    return NextResponse.json({
+      parsed: { ...out, search_used: webSearchEnabled ? out.search_used : false },
+    });
   } catch (e) {
     const failure = localAiRouteFailure(e);
     console.error("[food/parse-meal]", failure.detail);
