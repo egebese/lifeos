@@ -14,6 +14,7 @@ import {
   LocalAiMissingModelError,
   LocalAiTimeoutError,
   localAiRouteFailure,
+  redactEndpoint,
   redactedLocalAiPrompt,
   redactForLog,
   uploadLocal,
@@ -242,6 +243,13 @@ test("redacts credentials and query strings from local endpoint metadata", () =>
     request: { model: MODEL },
   });
   assert.doesNotMatch(JSON.stringify(metadata), /user|secret|token/);
+});
+
+test("redacts credentials and query strings from ASR endpoint metadata", () => {
+  assert.equal(
+    redactEndpoint("https://user:secret@example.test:10202/v1?token=secret"),
+    "https://example.test:10202/v1",
+  );
 });
 
 test("maps local AI failures to safe route status and detail", () => {

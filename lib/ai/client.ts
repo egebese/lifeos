@@ -115,7 +115,7 @@ function endpoint(baseUrl: string, pathName: string): string {
   }
 }
 
-function redactEndpoint(raw: string): string {
+export function redactEndpoint(raw: string): string {
   try {
     const url = new URL(raw);
     url.username = "";
@@ -475,7 +475,7 @@ export async function transcribeAudio(args: TranscribeArgs): Promise<{ text: str
     await recordAiMessage({
       userId: args.userId,
       kind: "freeform",
-      prompt: { endpoint: baseUrl, contentType: args.contentType, bytes: audio.length },
+      prompt: { endpoint: redactEndpoint(baseUrl), contentType: args.contentType, bytes: audio.length },
       response: responseForLog ?? (response ? { status: response.status } : null),
       model: "local-asr",
       errorMsg,
