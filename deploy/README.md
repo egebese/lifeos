@@ -100,6 +100,17 @@ Set these values in the LifeOS config:
     ASR_HTTP_TOKEN=generate-a-long-random-value
     ENABLE_WEB_SEARCH=false
 
+For optional WHOOP integration, add the client credentials and use the same
+HTTPS origin that your browser opens:
+
+    NEXT_PUBLIC_APP_URL=https://lifeos.<your-tailnet>.ts.net:8443
+    WHOOP_CLIENT_ID=your-whoop-client-id
+    WHOOP_CLIENT_SECRET=your-whoop-client-secret
+    WHOOP_REDIRECT_URI=https://lifeos.<your-tailnet>.ts.net:8443/api/whoop/callback
+
+Register that exact `WHOOP_REDIRECT_URI` in the WHOOP Developer Dashboard. If
+you leave it blank, LifeOS derives it from `NEXT_PUBLIC_APP_URL`.
+
 The installer writes the token-protected bridge as
 lifeos-asr-http.service in the user's systemd directory and restarts that
 bridge when its configuration changes. It does not restart the Wyoming server.
@@ -252,7 +263,10 @@ At minimum, edit these fields:
     ADMIN_EMAIL=you@example.com
     ADMIN_PASSWORD=choose-a-unique-first-login-password
     SESSION_SECRET=openssl-rand-base64-output
-    SESSION_COOKIE_SECURE=false
+    SESSION_COOKIE_SECURE=true
+    WHOOP_CLIENT_ID=your-whoop-client-id
+    WHOOP_CLIENT_SECRET=your-whoop-client-secret
+    WHOOP_REDIRECT_URI=https://your-public-host/api/whoop/callback
 
 After updating the checkout:
 
@@ -272,6 +286,10 @@ override is false; use false only for local development over plain HTTP.
 Web search is disabled by default. Set ENABLE_WEB_SEARCH=true only if sending
 raw meal text to DuckDuckGo is acceptable for your deployment. The search
 request is bounded and its results are treated as untrusted context.
+
+If WHOOP connect fails, verify that the client ID and secret are present in the
+private config, the callback URL is registered exactly in the WHOOP Developer
+Dashboard, and the callback uses the same HTTPS origin as `NEXT_PUBLIC_APP_URL`.
 
 ## 7. Troubleshooting
 

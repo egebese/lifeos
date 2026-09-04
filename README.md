@@ -128,7 +128,7 @@ pnpm dev                         # http://localhost:3000
 | `TTS_BASE_URL` | optional | User-hosted TTS URL; informational until LifeOS adds speech output |
 | `WHOOP_CLIENT_ID` | optional | From [developer.whoop.com](https://developer.whoop.com) |
 | `WHOOP_CLIENT_SECRET` | optional | OAuth client secret |
-| `WHOOP_REDIRECT_URI` | optional | `https://yourdomain.com/api/whoop/callback` |
+| `WHOOP_REDIRECT_URI` | optional | Exact registered callback; defaults to `NEXT_PUBLIC_APP_URL/api/whoop/callback` |
 | `WHOOP_WEBHOOK_SECRET` | optional | Only if you set a custom webhook secret in the Whoop portal |
 | `NEXT_PUBLIC_APP_URL` | ✅ (deployment) | Browser-visible public origin |
 | `ENABLE_CRON` | optional | `1` to enable background jobs in the Node process |
