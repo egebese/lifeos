@@ -117,7 +117,99 @@ LifeOS host. Plain http://192.168.x.x:3000 pages cannot request microphone
 access; LifeOS displays this requirement instead of sending a broken audio
 request.
 
-## 4. Host local TTS
+## 4. HTTPS access
+
+LifeOS listens on HTTP port 3000. Put a TLS reverse proxy in front of it for
+phone and LAN browser access. Do not expose port 3000 to the public Internet.
+
+### Option A: Caddy for LAN access
+
+Install Caddy on the LifeOS host:
+
+    sudo apt-get update
+    sudo apt-get install -y caddy
+
+Edit /etc/caddy/Caddyfile:
+
+    lifeos.home.arpa {
+        tls internal
+        reverse_proxy 127.0.0.1:3000
+    }
+
+Start and validate it:
+
+    sudo caddy validate --config /etc/caddy/Caddyfile
+    sudo systemctl enable --now caddy
+    sudo systemctl reload caddy
+
+The hostname must resolve to the LifeOS host. Add a local DNS/host entry in
+your router, or add this line on each Linux/macOS client:
+
+    LIFEOS_HOST_IP lifeos.home.arpa
+
+Replace the example address with the LifeOS host address. iPhones cannot use
+your computer's /etc/hosts file, so use a router local-DNS entry for iPhone
+access. Because tls internal uses Caddy's private CA, install and trust
+Caddy's root certificate on every browser device. The root certificate is:
+
+    /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt
+
+For an internal certificate, the installer health check also needs the LifeOS
+host to trust that root certificate. If update.sh reports
+"health check failed: login", verify the HTTPS URL and certificate trust; the
+containers may already be running successfully.
+
+Set the public origin in the private config:
+
+    NEXT_PUBLIC_APP_URL=https://lifeos.home.arpa
+    SESSION_COOKIE_SECURE=true
+
+### Option B: Tailscale Serve for phones and remote access
+
+Tailscale is usually simpler for phones because it provides private routing,
+MagicDNS, and a browser-trusted HTTPS certificate without router port
+forwarding or a local /etc/hosts entry.
+
+Install and authenticate Tailscale on the LifeOS host, then install the
+Tailscale app on each client and sign in to the same tailnet:
+
+    curl -fsSL https://tailscale.com/install.sh | sh
+    sudo tailscale up
+
+Use --hostname=lifeos with tailscale up if you want to give this node a new
+stable name; otherwise keep its existing Tailscale hostname.
+
+In the Tailscale admin console, enable MagicDNS and HTTPS certificates. Then
+serve LifeOS through an unused HTTPS port. If Caddy already owns 443, use a
+different free port such as 8443 or 9443:
+
+    tmux new -s lifeos-tailscale
+    sudo tailscale serve --https=8443 http://127.0.0.1:3000
+
+Keep the Serve command running in tmux. It prints the private URL, for
+example:
+
+    https://lifeos.<your-tailnet>.ts.net:8443
+
+Connect the iPhone to Tailscale, then open that exact URL. Do not use Tailscale
+Funnel unless you intentionally want to publish LifeOS to the Internet.
+
+Set the exact Tailscale URL in the private config and update LifeOS:
+
+    NEXT_PUBLIC_APP_URL=https://lifeos.<your-tailnet>.ts.net:8443
+    SESSION_COOKIE_SECURE=true
+    ./deploy/update.sh "$HOME/.config/lifeos.env"
+
+If SSH reports "missing or unsuitable terminal: xterm-kitty" when starting
+tmux, install the terminal definition once on Ubuntu:
+
+    sudo apt-get install -y kitty-terminfo
+
+Tailscale Serve requires HTTPS to be enabled for the tailnet. Tailscale's
+HTTPS setup publishes certificate names in a public certificate-transparency
+ledger, while access to the service remains restricted to your tailnet.
+
+## 5. Host local TTS
 
 TTS is not called by the current LifeOS UI. You can still run a local TTS
 provider for Home Assistant or a future spoken-output client and record its
@@ -138,7 +230,7 @@ Use a provider's documented HTTP endpoint only if your client needs HTTP;
 Wyoming TCP and HTTP are different protocols. Keep TTS on the private network.
 Setting TTS_BASE_URL does not add speech output to current LifeOS.
 
-## 5. Configuration and updates
+## 6. Configuration and updates
 
 At minimum, edit these fields:
 
@@ -176,7 +268,7 @@ For HTTPS behind a reverse proxy, set NEXT_PUBLIC_APP_URL to the HTTPS origin
 and SESSION_COOKIE_SECURE=true. For plain HTTP on a trusted LAN, leave it
 false.
 
-## Troubleshooting
+## 7. Troubleshooting
 
     docker compose --env-file "$HOME/.config/lifeos.env" ps
     docker compose --env-file "$HOME/.config/lifeos.env" logs -f web
